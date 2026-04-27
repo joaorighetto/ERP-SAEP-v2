@@ -128,7 +128,7 @@ Orientações para agentes:
   - Não se deve assumir que `manage.py`, `config/` ou `apps/` existem sem verificar.
 - **Entregáveis:**
   - Diagnóstico objetivo de arquivos existentes e ausentes.
-  - Confirmação de Makefile, requirements, pyproject, `.env.example` e CI.
+  - Confirmação de Makefile, pyproject, `uv.lock`, `.env.example` e CI.
   - Confirmação de que não há apps de domínio materializados.
 - **Testes esperados:**
   - Não há teste automatizado obrigatório nesta tarefa.
@@ -170,7 +170,7 @@ Orientações para agentes:
 - **Comandos de validação:**
   - `rtk make prepare`
   - `rtk make init`
-  - `rtk .venv/bin/python manage.py check --settings=config.settings.dev`
+  - `rtk uv run python manage.py check --settings=config.settings.dev`
 - **Fora do escopo:**
   - Criar `apps/users/`.
   - Definir usuário customizado.
@@ -196,7 +196,7 @@ Orientações para agentes:
   - `config/settings/dev.py`.
   - `config/settings/test.py`.
   - `.env.example` mínimo Django/API.
-  - `requirements.txt` com `python-dotenv` e `django-cors-headers` pinados por faixa major.
+  - `pyproject.toml` e `uv.lock` com `python-dotenv` e `django-cors-headers` pinados por faixa major.
   - Configuração conservadora de CORS e CSRF para ambiente local.
 - **Testes esperados:**
   - Settings carregam com `.env`.
@@ -205,7 +205,7 @@ Orientações para agentes:
 - **Comandos de validação:**
   - `rtk make prepare`
   - `rtk make init`
-  - `rtk .venv/bin/python manage.py check --settings=config.settings.dev`
+  - `rtk uv run python manage.py check --settings=config.settings.dev`
   - `rtk make test`
 - **Fora do escopo:**
   - Criar Docker Compose.
@@ -266,7 +266,7 @@ Orientações para agentes:
   - Paginação e envelope de erro possuem componentes técnicos testáveis.
 - **Comandos de validação:**
   - `rtk make test`
-  - `rtk .venv/bin/python manage.py check --settings=config.settings.dev`
+  - `rtk uv run python manage.py check --settings=config.settings.dev`
 - **Fora do escopo:**
   - Endpoints de usuário, setor, papel, material, estoque, importação, requisição, autorização, atendimento, notificação ou auditoria.
   - Policies de domínio.
@@ -295,9 +295,9 @@ Orientações para agentes:
   - Smoke tests passam.
 - **Comandos de validação:**
   - `rtk make test`
-  - `rtk .venv/bin/python manage.py check --settings=config.settings.dev`
-  - `rtk .venv/bin/ruff check .`
-  - `rtk .venv/bin/ruff format --check .`
+  - `rtk uv run python manage.py check --settings=config.settings.dev`
+  - `rtk uv run ruff check .`
+  - `rtk uv run ruff format --check .`
 - **Fora do escopo:**
   - CI de concorrência de estoque.
   - CI de schema OpenAPI com endpoints funcionais.

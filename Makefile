@@ -24,10 +24,10 @@ ENV_FILE ?= .env
 ENV_EXAMPLE_FILE ?= .env.example
 PID_FILE ?= .pid
 PSQL ?= psql
+UV ?= uv
 
 PYTHON_VERSION ?= 3.14
-PYTHON ?= $(VENV_DIR)/bin/python
-PIP ?= $(VENV_DIR)/bin/pip
+PYTHON ?= $(UV) run python
 MANAGE_PY ?= manage.py
 DJANGO_ADMIN ?= $(PYTHON) $(MANAGE_PY)
 
@@ -61,13 +61,11 @@ help: ## Mostrar rotinas disponíveis
 # Bootstrap
 # ------------------------------------------------------------------------------
 
-prepare: ## Criar venv e materializar .env a partir do exemplo
-	@test -d $(VENV_DIR) || python$(PYTHON_VERSION) -m venv $(VENV_DIR)
+prepare: ## Materializar .env a partir do exemplo
 	@test -f $(ENV_FILE) || cp $(ENV_EXAMPLE_FILE) $(ENV_FILE)
 
 init: veryclean prepare ## Recriar ambiente Python e instalar dependências
-	$(PIP) install --upgrade pip
-	$(PIP) install -r requirements.txt
+	$(UV) sync
 
 # ------------------------------------------------------------------------------
 # Project setup
@@ -112,7 +110,7 @@ resetpostgres: ## Apagar schema public do PostgreSQL e recriá-lo do zero
 # ------------------------------------------------------------------------------
 
 test: ## Rodar testes com settings de teste
-	DJANGO_SETTINGS_MODULE=$(TEST_SETTINGS_MODULE) $(VENV_DIR)/bin/pytest
+	DJANGO_SETTINGS_MODULE=$(TEST_SETTINGS_MODULE) $(UV) run pytest
 
 run: ## Subir servidor de desenvolvimento
 	DJANGO_SETTINGS_MODULE=$(DJANGO_SETTINGS_MODULE) $(DJANGO_ADMIN) runserver

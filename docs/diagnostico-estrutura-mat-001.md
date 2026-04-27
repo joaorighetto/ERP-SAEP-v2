@@ -30,10 +30,10 @@
 | Item | Status | Nota |
 |---|---|---|
 | `Makefile` | ✓ Presente | Define rotinas de desenvolvimento |
-| `requirements.txt` | ✓ Presente | Dependências Python (será atualizado em MAT-003) |
-| `pyproject.toml` | ✓ Presente | Configuração de projeto |
+| `pyproject.toml` | ✓ Presente | Configuração de projeto e dependências Python |
+| `uv.lock` | ✓ Presente | Lockfile reproduzível de dependências |
 | `.env.example` | ✓ Presente | Será atualizado em MAT-003 |
-| `requirements.txt` com `pin por faixa major` | ✓ Presente | Já segue padrão recomendado |
+| `.python-version` | ✓ Presente | Versão Python usada pelo uv e pela CI |
 
 ## 3. CI/CD (PRÉ-MATERIALIZAÇÃO)
 
@@ -65,7 +65,8 @@
 ## 5. Resumo de pré-condições
 
 - ✓ Makefile funcional com rotinas recomendadas
-- ✓ requirements.txt com pino por faixa major
+- ✓ pyproject.toml com dependências pinadas por faixa major
+- ✓ uv.lock versionado
 - ✓ pyproject.toml presente
 - ✓ .env.example presente (será atualizado)
 - ✓ .github/ estrutura presente (vazia, pronta para CI)

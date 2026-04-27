@@ -214,6 +214,7 @@ O sistema não deve ser considerado pronto para uso real sem rotina mínima de b
 
 Ferramentas recomendadas:
 
+- uv para gerenciamento de ambiente, dependências e lockfile;
 - pytest;
 - pytest-django;
 - ruff;
@@ -244,8 +245,8 @@ Antes de executar as tarefas `MAT-*`, o repositório contém apenas:
 docs/
 tests/ (opcional, criado em MAT-004)
 Makefile
-requirements.txt
 pyproject.toml
+uv.lock
 .env.example
 ```
 

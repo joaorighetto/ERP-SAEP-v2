@@ -53,12 +53,12 @@ Durante a fase inicial, o ambiente local é descartável.
 Rotinas principais do projeto via `rtk make`:
 
 - `rtk make help`: lista as rotinas disponíveis;
-- `rtk make prepare`: cria a `venv` e materializa `.env` a partir de `.env.example`;
-- `rtk make init`: recria o ambiente Python e instala dependências com `pip install -r requirements.txt`;
+- `rtk make prepare`: materializa `.env` a partir de `.env.example`;
+- `rtk make init`: recria o ambiente Python e instala dependências com `uv sync`;
 - `rtk make setup`: limpa o ambiente, recria schema/migrations locais e coleta estáticos;
 - `rtk make clean`: remove caches e artefatos locais sem afetar o banco;
 - `rtk make cleanall`: executa limpeza local e reseta o schema `public` do PostgreSQL;
-- `rtk make veryclean`: remove `venv`, caches e migrations locais geradas;
+- `rtk make veryclean`: remove `.venv`, caches e migrations locais geradas;
 - `rtk make resetpostgres`: apaga e recria o schema `public` usando `DATABASE_URL`;
 - `rtk make test`: executa a suíte com `config.settings.test`;
 - `rtk make run`: sobe o servidor Django com `config.settings.dev`;

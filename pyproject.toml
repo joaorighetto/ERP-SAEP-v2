@@ -1,3 +1,31 @@
+[project]
+name = "erp-saep-v2"
+version = "0.1.0"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "Django>=6.0,<7",
+    "django-allauth>=65,<66",
+    "django-cors-headers>=4.9,<5",
+    "django-filter>=25,<26",
+    "djangorestframework>=3.17,<4",
+    "drf-spectacular>=0.29,<1",
+    "psycopg[binary]>=3.3,<4",
+    "python-dotenv>=1.2,<2",
+]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.13,<8",
+    "factory-boy>=3.3,<4",
+    "pre-commit>=4.6,<5",
+    "pytest>=9,<10",
+    "pytest-django>=4.12,<5",
+    "ruff>=0.15,<1",
+]
+
+[tool.uv]
+package = false
+
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["test_*.py"]
