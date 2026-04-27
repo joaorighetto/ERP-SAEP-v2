@@ -17,6 +17,7 @@ from apps.users.policies import (
     pode_autorizar_setor,
     pode_criar_requisicao_para,
     pode_operar_estoque,
+    pode_operar_estoque_chefia,
     pode_ver_fila_atendimento,
 )
 
@@ -98,6 +99,23 @@ class TestPodeCriarRequisicaoPara:
         beneficiario = _criar_user("20007", PapelChoices.SOLICITANTE, setor=setor_b)
 
         assert pode_criar_requisicao_para(auxiliar, beneficiario) is False
+
+    def test_per03_chefe_setor_pode_criar_para_setor_sob_responsabilidade(self):
+        """PER-03 — chefe usa o setor sob responsabilidade, não a lotação atual."""
+        chefe = _criar_user("20008", PapelChoices.CHEFE_SETOR)
+        setor = _criar_setor("Financeiro", chefe)
+        beneficiario = _criar_user("20009", PapelChoices.SOLICITANTE, setor=setor)
+
+        assert pode_criar_requisicao_para(chefe, beneficiario) is True
+
+    def test_per03_chefe_setor_sem_responsabilidade_nao_herda_escopo_por_lotacao(self):
+        """PER-03 — marcar papel de chefe sem setor_responsavel não concede escopo."""
+        chefe_responsavel = _criar_user("20010", PapelChoices.CHEFE_SETOR)
+        setor = _criar_setor("Compras", chefe_responsavel)
+        pseudo_chefe = _criar_user("20011", PapelChoices.CHEFE_SETOR, setor=setor)
+        beneficiario = _criar_user("20012", PapelChoices.SOLICITANTE, setor=setor)
+
+        assert pode_criar_requisicao_para(pseudo_chefe, beneficiario) is False
 
     def test_per04_auxiliar_almoxarifado_pode_criar_para_qualquer_funcionario(self):
         """PER-04 — caminho feliz: auxiliar de Almoxarifado cria para qualquer setor."""
@@ -215,6 +233,16 @@ class TestFilaAtendimentoEEstoque:
         user = _criar_user("70003", PapelChoices.CHEFE_ALMOXARIFADO)
         assert pode_operar_estoque(user) is True
 
+    def test_auxiliar_almoxarifado_nao_pode_operar_estoque_chefia(self):
+        """PER-05 — auxiliar não recebe saída excepcional nem estorno."""
+        user = _criar_user("70004", PapelChoices.AUXILIAR_ALMOXARIFADO)
+        assert pode_operar_estoque_chefia(user) is False
+
+    def test_per05_chefe_almoxarifado_pode_operar_estoque_chefia(self):
+        """PER-05 — chefe de Almoxarifado pode executar ações exclusivas de chefia."""
+        user = _criar_user("70005", PapelChoices.CHEFE_ALMOXARIFADO)
+        assert pode_operar_estoque_chefia(user) is True
+
     def test_per06_superusuario_nao_pode_operar_estoque(self):
         """PER-06 — Superusuário bloqueado de operações de estoque."""
         superuser = User.objects.create_superuser(
@@ -223,3 +251,4 @@ class TestFilaAtendimentoEEstoque:
             nome_completo="Super Admin 3",
         )
         assert pode_operar_estoque(superuser) is False
+        assert pode_operar_estoque_chefia(superuser) is False

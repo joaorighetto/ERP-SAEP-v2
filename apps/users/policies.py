@@ -10,6 +10,10 @@ para garantir que a mesma lógica seja aplicada em ambas as camadas
 from .models import PapelChoices
 
 
+def _user_ativo_nao_superuser(user) -> bool:
+    return user.is_active and not user.is_superuser
+
+
 def pode_criar_requisicao_para(criador, beneficiario) -> bool:
     """
     Verifica se `criador` pode criar uma requisição em nome de `beneficiario`.
@@ -23,10 +27,7 @@ def pode_criar_requisicao_para(criador, beneficiario) -> bool:
     - Superusuário: nunca (suporte/admin, não operador cotidiano).
     - Usuário inativo: nunca (invariante USR-03).
     """
-    if not criador.is_active:
-        return False
-
-    if criador.is_superuser:
+    if not _user_ativo_nao_superuser(criador):
         return False
 
     papel = criador.papel
@@ -37,10 +38,17 @@ def pode_criar_requisicao_para(criador, beneficiario) -> bool:
     if papel == PapelChoices.SOLICITANTE:
         return criador.pk == beneficiario.pk
 
-    if papel in (PapelChoices.AUXILIAR_SETOR, PapelChoices.CHEFE_SETOR):
+    if papel == PapelChoices.AUXILIAR_SETOR:
         if criador.setor_id is None or beneficiario.setor_id is None:
             return False
-        return criador.setor_id == beneficiario.setor_id
+        setor_escopo_id = criador.setor_id
+        return setor_escopo_id == beneficiario.setor_id
+
+    if papel == PapelChoices.CHEFE_SETOR:
+        setor_responsavel = getattr(criador, "setor_responsavel", None)
+        if setor_responsavel is None or beneficiario.setor_id is None:
+            return False
+        return setor_responsavel.pk == beneficiario.setor_id
 
     return False
 
@@ -56,10 +64,7 @@ def pode_autorizar_setor(autorizador, setor) -> bool:
     - Demais papéis e superusuário: nunca.
     - Usuário inativo: nunca (invariante USR-03).
     """
-    if not autorizador.is_active:
-        return False
-
-    if autorizador.is_superuser:
+    if not _user_ativo_nao_superuser(autorizador):
         return False
 
     papel = autorizador.papel
@@ -89,10 +94,7 @@ def pode_ver_fila_atendimento(user) -> bool:
     - Demais papéis: não.
     - Usuário inativo: nunca (invariante USR-03).
     """
-    if not user.is_active:
-        return False
-
-    if user.is_superuser:
+    if not _user_ativo_nao_superuser(user):
         return False
 
     return user.papel in (
@@ -103,23 +105,38 @@ def pode_ver_fila_atendimento(user) -> bool:
 
 def pode_operar_estoque(user) -> bool:
     """
-    Verifica se `user` pode executar operações formais de estoque
-    (atendimento, devolução, saída excepcional, estorno).
+    Verifica se `user` pode executar operações operacionais comuns de estoque
+    (atendimento, devolução e ações correlatas de fluxo normal).
 
     Regras (matriz-permissoes.md, seção 4):
     - Auxiliar de Almoxarifado: sim (atendimento e devolução).
-    - Chefe de Almoxarifado: sim (herda auxiliar; adicionalmente saída excepcional e estorno).
+    - Chefe de Almoxarifado: sim (herda as operações comuns do auxiliar).
     - Superusuário: nunca (invariante PER-06).
     - Demais papéis: não.
     - Usuário inativo: nunca (invariante USR-03).
     """
-    if not user.is_active:
-        return False
-
-    if user.is_superuser:
+    if not _user_ativo_nao_superuser(user):
         return False
 
     return user.papel in (
         PapelChoices.AUXILIAR_ALMOXARIFADO,
         PapelChoices.CHEFE_ALMOXARIFADO,
     )
+
+
+def pode_operar_estoque_chefia(user) -> bool:
+    """
+    Verifica se `user` pode executar operações exclusivas da chefia
+    do Almoxarifado (saída excepcional, estornos e equivalentes).
+
+    Regras (matriz-permissoes.md, seção 4):
+    - Chefe de Almoxarifado: sim.
+    - Auxiliar de Almoxarifado: não.
+    - Superusuário: nunca (invariante PER-06).
+    - Demais papéis: não.
+    - Usuário inativo: nunca (invariante USR-03).
+    """
+    if not _user_ativo_nao_superuser(user):
+        return False
+
+    return user.papel == PapelChoices.CHEFE_ALMOXARIFADO
