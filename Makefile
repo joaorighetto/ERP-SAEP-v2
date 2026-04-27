@@ -26,7 +26,6 @@ PID_FILE ?= .pid
 PSQL ?= psql
 UV ?= uv
 
-PYTHON_VERSION ?= 3.14
 PYTHON ?= $(UV) run python
 MANAGE_PY ?= manage.py
 DJANGO_ADMIN ?= $(PYTHON) $(MANAGE_PY)

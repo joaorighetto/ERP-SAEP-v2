@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from .managers import UserManager
@@ -11,7 +13,7 @@ class Setor(models.Model):
         help_text="Nome do setor organizacional.",
     )
     chefe_responsavel = models.OneToOneField(
-        "User",
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="setor_responsavel",
         help_text="Chefe responsável pelo setor.",
@@ -31,17 +33,29 @@ class Setor(models.Model):
     def __str__(self):
         return f"{self.nome} (Chefe: {self.chefe_responsavel.matricula_funcional})"
 
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-
     def clean(self):
-        from django.core.exceptions import ValidationError
-
+        super().clean()
         if not self.chefe_responsavel_id:
+            return
+
+        chefe_setor = getattr(self.chefe_responsavel, "setor", None)
+        if chefe_setor is self:
+            return
+        if self.pk and self.chefe_responsavel.setor_id == self.pk:
+            return
+
+        if chefe_setor is None:
             raise ValidationError(
-                {"chefe_responsavel": "Todo setor deve ter um chefe responsável."}
+                {"chefe_responsavel": "O chefe responsável deve pertencer a este setor."}
             )
+
+        raise ValidationError(
+            {
+                "chefe_responsavel": (
+                    f"O chefe responsável pertence ao setor '{chefe_setor.nome}', não a este setor."
+                )
+            }
+        )
 
 
 class User(AbstractBaseUser, PermissionsMixin):

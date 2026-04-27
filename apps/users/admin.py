@@ -7,6 +7,7 @@ from .models import Setor, User
 @admin.register(Setor)
 class SetorAdmin(admin.ModelAdmin):
     list_display = ("nome", "chefe_responsavel", "is_active", "created_at")
+    list_select_related = ("chefe_responsavel",)
     list_filter = ("is_active", "created_at")
     search_fields = (
         "nome",
@@ -38,6 +39,7 @@ class UserAdmin(DjangoUserAdmin):
         "is_active",
         "is_staff",
     )
+    list_select_related = ("setor", "setor__chefe_responsavel")
     list_filter = ("is_active", "is_staff", "setor", "date_joined")
     search_fields = ("matricula_funcional", "nome_completo", "email")
     ordering = ("matricula_funcional",)
