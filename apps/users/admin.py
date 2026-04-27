@@ -21,6 +21,12 @@ class SetorAdmin(admin.ModelAdmin):
         ("Datas", {"fields": ("created_at", "updated_at")}),
     )
 
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(self.readonly_fields)
+        if obj:
+            fields.append("chefe_responsavel")
+        return fields
+
 
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):

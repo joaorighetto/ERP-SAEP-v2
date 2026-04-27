@@ -58,6 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         blank=True,
         related_name="usuarios",
+        db_index=True,
         help_text="Setor ao qual o usuário pertence.",
     )
     is_active = models.BooleanField(default=True)
