@@ -35,18 +35,19 @@ class UserAdmin(DjangoUserAdmin):
         "matricula_funcional",
         "nome_completo",
         "setor",
+        "papel",
         "email",
         "is_active",
         "is_staff",
     )
     list_select_related = ("setor", "setor__chefe_responsavel")
-    list_filter = ("is_active", "is_staff", "setor", "date_joined")
+    list_filter = ("papel", "is_active", "is_staff", "setor", "date_joined")
     search_fields = ("matricula_funcional", "nome_completo", "email")
     ordering = ("matricula_funcional",)
 
     fieldsets = (
         (None, {"fields": ("matricula_funcional", "password")}),
-        ("Informações pessoais", {"fields": ("nome_completo", "email", "setor")}),
+        ("Informações pessoais", {"fields": ("nome_completo", "email", "setor", "papel")}),
         (
             "Permissões",
             {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")},
@@ -65,6 +66,7 @@ class UserAdmin(DjangoUserAdmin):
                     "password2",
                     "nome_completo",
                     "setor",
+                    "papel",
                 ),
             },
         ),

@@ -6,6 +6,16 @@ from django.db import models
 from .managers import UserManager
 
 
+class PapelChoices(models.TextChoices):
+    """Papéis operacionais do sistema ERP-SAEP."""
+
+    SOLICITANTE = "solicitante", "Solicitante"
+    AUXILIAR_SETOR = "auxiliar_setor", "Auxiliar de Setor"
+    CHEFE_SETOR = "chefe_setor", "Chefe de Setor"
+    AUXILIAR_ALMOXARIFADO = "auxiliar_almoxarifado", "Auxiliar de Almoxarifado"
+    CHEFE_ALMOXARIFADO = "chefe_almoxarifado", "Chefe de Almoxarifado"
+
+
 class Setor(models.Model):
     nome = models.CharField(
         max_length=200,
@@ -74,6 +84,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         related_name="usuarios",
         db_index=True,
         help_text="Setor ao qual o usuário pertence.",
+    )
+    papel = models.CharField(
+        max_length=30,
+        choices=PapelChoices.choices,
+        default=PapelChoices.SOLICITANTE,
+        db_index=True,
+        help_text="Papel operacional do usuário no sistema.",
     )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
