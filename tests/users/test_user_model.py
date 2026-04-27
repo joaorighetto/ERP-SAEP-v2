@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth import authenticate
 from django.db import IntegrityError
 
 from apps.users.models import User
@@ -49,6 +50,20 @@ class TestUserModel:
         user.save()
 
         assert user.is_active is False
+
+    def test_usuario_inativo_nao_autentica(self):
+        User.objects.create_user(
+            matricula_funcional="12345",
+            password="testpass123",
+            nome_completo="João Silva",
+            is_active=False,
+        )
+
+        result = authenticate(
+            matricula_funcional="12345",
+            password="testpass123",
+        )
+        assert result is None
 
     def test_criar_superuser(self):
         user = User.objects.create_superuser(
