@@ -30,7 +30,7 @@
 - `.env.example` updated for Django/API context
 - `requirements.txt` with pinned versions (major ranges)
 - python-dotenv, django-cors-headers added
-- django-filter updated to 24.x for Django 6.0 compatibility
+- Dependency baseline upgraded on 2026-04-27 in commit `d7702de`: Django 6.0.4, DRF 3.17.1, drf-spectacular 0.29.0, django-filter 25.2, django-allauth 65.16.1, django-cors-headers 4.9.0, psycopg 3.3.3, pytest 9.0.3, pytest-django 4.12.0, coverage 7.13.5, ruff 0.15.12, pre-commit 4.6.0, factory_boy 3.3.3
 
 ### Smoke Tests (MAT-004)
 - `tests/` directory created

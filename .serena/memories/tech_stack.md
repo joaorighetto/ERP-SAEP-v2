@@ -14,6 +14,13 @@ Current active stack for ERP-SAEP:
 - pytest, pytest-django, ruff, coverage, and pre-commit as the initial quality/tooling base.
 - factory_boy as the chosen standard for test data generation.
 
+Current dependency baseline after the 2026-04-27 audit/upgrade (`d7702de chore: upgrade python dependencies`):
+- Django 6.0.4, djangorestframework 3.17.1, drf-spectacular 0.29.0.
+- django-filter 25.2, django-allauth 65.16.1, django-cors-headers 4.9.0.
+- psycopg/psycopg-binary 3.3.3, python-dotenv 1.2.2.
+- pytest 9.0.3, pytest-django 4.12.0, coverage 7.13.5, ruff 0.15.12, pre-commit 4.6.0, factory_boy 3.3.3.
+- Validation passed locally: `pip check` clean and `rtk make test` with 15 passed, 1 drf-spectacular/Python 3.14 deprecation warning.
+
 Materialization baseline:
 - **Django materialization (MAT-000 to MAT-006) COMPLETED** ✅
 All technical bootstrap tasks finished; functional piloto work (PIL-*) ready to begin.
