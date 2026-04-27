@@ -51,7 +51,8 @@ def pode_autorizar_setor(autorizador, setor) -> bool:
 
     Regras (matriz-permissoes.md, seção 4):
     - Chefe de setor: apenas o setor pelo qual é responsável (setor_responsavel).
-    - Chefe de Almoxarifado: apenas o setor Almoxarifado (o setor ao qual pertence).
+    - Chefe de Almoxarifado: autoriza APENAS requisições do setor Almoxarifado.
+      Nota: o setor Almoxarifado é aquele ao qual o chefe pertence (setor_id).
     - Demais papéis e superusuário: nunca.
     - Usuário inativo: nunca (invariante USR-03).
     """

@@ -166,6 +166,18 @@ class TestPodeAutorizarSetor:
 
         assert pode_autorizar_setor(chefe_a, setor_b) is False
 
+    def test_per05_chefe_almoxarifado_nao_pode_autorizar_outro_setor(self):
+        """PER-05 — Chefe de Almoxarifado autoriza APENAS seu setor Almoxarifado."""
+        chefe_alm = _criar_user("60004", PapelChoices.CHEFE_ALMOXARIFADO)
+        setor_alm = _criar_setor("Almoxarifado", chefe_alm)
+        chefe_alm.setor = setor_alm
+        chefe_alm.save(update_fields=["setor"])
+
+        chefe_outro = _criar_user("60005", PapelChoices.CHEFE_SETOR)
+        setor_outro = _criar_setor("Obras", chefe_outro)
+
+        assert pode_autorizar_setor(chefe_alm, setor_outro) is False
+
     def test_per06_superusuario_nao_pode_autorizar_setor(self):
         """PER-06 — Superusuário não autoriza requisições operacionais."""
         superuser = User.objects.create_superuser(
@@ -173,7 +185,7 @@ class TestPodeAutorizarSetor:
             password="testpass123",
             nome_completo="Super Admin 2",
         )
-        chefe = _criar_user("60004", PapelChoices.CHEFE_SETOR)
+        chefe = _criar_user("60006", PapelChoices.CHEFE_SETOR)
         setor = _criar_setor("Planejamento", chefe)
 
         assert pode_autorizar_setor(superuser, setor) is False
