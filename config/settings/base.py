@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "django_filters",
+    "apps.users",
     "apps.core",
 ]
 
@@ -70,6 +71,8 @@ DATABASES["default"] = {
     "HOST": parsed_url.hostname,
     "PORT": parsed_url.port or 5432,
 }
+
+AUTH_USER_MODEL = "users.User"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

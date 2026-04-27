@@ -30,10 +30,10 @@ class TestSettingsLoading:
         assert "rest_framework" in installed or "rest_framework" in installed
 
     def test_no_domain_apps_installed(self):
-        """Verify no domain apps are installed (expected for bootstrap)."""
+        """Verify no unauthorized domain apps are installed."""
         installed = [app.name for app in apps.get_app_configs()]
+        # users is expected after PIL-BE-ACE-001; organizational added after PIL-BE-ACE-002, etc.
         domain_apps = [
-            "users",
             "organizational",
             "materials",
             "stock",
@@ -47,7 +47,7 @@ class TestSettingsLoading:
         ]
         for app in domain_apps:
             assert not any(app in name for name in installed), (
-                f"Domain app '{app}' should not be installed during bootstrap"
+                f"Domain app '{app}' should not be installed yet"
             )
 
     def test_drf_is_configured(self):
