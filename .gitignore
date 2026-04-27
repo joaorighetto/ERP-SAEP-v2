@@ -15,6 +15,7 @@ db.sqlite3
 media/
 staticfiles/
 apps/**/migrations/*.py
+!apps/**/migrations/__init__.py
 
 # Ambiente
 .env

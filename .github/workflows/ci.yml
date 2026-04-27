@@ -54,6 +54,13 @@ jobs:
           DJANGO_SETTINGS_MODULE: config.settings.test
         run: |
           python manage.py check
+      - name: Create ephemeral migrations
+        env:
+          SECRET_KEY: test-secret-key-for-ci
+          DATABASE_URL: postgres://saep:saep@localhost:5432/test_erp_saep
+          DJANGO_SETTINGS_MODULE: config.settings.test
+        run: |
+          python manage.py makemigrations
       - name: Run pytest
         env:
           SECRET_KEY: test-secret-key-for-ci
