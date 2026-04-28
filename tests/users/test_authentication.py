@@ -1,11 +1,10 @@
-import pytest
 from django.contrib.auth import authenticate
 from django.test import TestCase
 
+from apps.users.backends import MatriculaBackend
 from apps.users.models import User
 
 
-@pytest.mark.django_db
 class TestMatriculaAuthentication(TestCase):
     """Testes para autenticação por matrícula funcional."""
 
@@ -26,6 +25,15 @@ class TestMatriculaAuthentication(TestCase):
         assert user is not None
         assert user.pk == self.user.pk
         assert user.matricula_funcional == self.user_data["matricula_funcional"]
+
+    def test_autenticacao_com_username_padrao_do_django(self):
+        """Autentica usuário pelo fluxo padrão do Django usando username."""
+        user = authenticate(
+            username=self.user_data["matricula_funcional"],
+            password=self.user_data["password"],
+        )
+        assert user is not None
+        assert user.pk == self.user.pk
 
     def test_autenticacao_falha_com_matricula_incorreta(self):
         """Retorna None quando matrícula não existe."""
@@ -118,8 +126,6 @@ class TestMatriculaAuthentication(TestCase):
 
     def test_get_user_por_id(self):
         """Backend consegue recuperar usuário por ID (necessário para sessões)."""
-        from apps.users.backends import MatriculaBackend
-
         backend = MatriculaBackend()
         user = backend.get_user(self.user.pk)
         assert user is not None
@@ -127,8 +133,6 @@ class TestMatriculaAuthentication(TestCase):
 
     def test_get_user_com_id_invalido(self):
         """Backend retorna None para ID que não existe."""
-        from apps.users.backends import MatriculaBackend
-
         backend = MatriculaBackend()
         user = backend.get_user(99999)
         assert user is None
