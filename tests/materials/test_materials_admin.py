@@ -2,8 +2,8 @@ import pytest
 from django.contrib import admin
 from django.test import RequestFactory
 
-from apps.materials.admin import GrupoMaterialAdmin, SubgrupoMaterialAdmin
-from apps.materials.models import GrupoMaterial, SubgrupoMaterial
+from apps.materials.admin import GrupoMaterialAdmin, MaterialAdmin, SubgrupoMaterialAdmin
+from apps.materials.models import GrupoMaterial, Material, SubgrupoMaterial
 from apps.users.models import User
 
 
@@ -46,6 +46,27 @@ class TestMaterialsAdmin:
             "grupo",
             "codigo_subgrupo",
             "nome",
+            "created_at",
+            "updated_at",
+        )
+
+    def test_material_admin_bloqueia_mutacao_manual_de_dados_scpi(self):
+        request = self._staff_request()
+        model_admin = MaterialAdmin(Material, admin.site)
+
+        assert model_admin.has_view_permission(request) is True
+        assert model_admin.has_add_permission(request) is False
+        assert model_admin.has_change_permission(request) is False
+        assert model_admin.has_delete_permission(request) is False
+        assert model_admin.get_readonly_fields(request) == (
+            "subgrupo",
+            "codigo_completo",
+            "nome",
+            "descricao",
+            "unidade_medida",
+            "sequencial",
+            "is_active",
+            "observacoes_internas",
             "created_at",
             "updated_at",
         )

@@ -33,11 +33,11 @@ class TestSettingsLoading:
         """Verify no unauthorized domain apps are installed."""
         installed = [app.name for app in apps.get_app_configs()]
         # users is installed after PIL-BE-ACE-001 (complete)
-        # materials is installed after PIL-BE-MAT-001 (current)
+        # materials is installed after PIL-BE-MAT-001 (complete)
+        # stock is installed after PIL-BE-EST-001 (complete)
         # Other domain apps should not be installed yet
         domain_apps = [
             "organizational",
-            "stock",
             "requisitions",
             "approvals",
             "warehouse",

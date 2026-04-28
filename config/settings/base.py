@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "django_filters",
     "apps.users",
     "apps.materials",
+    "apps.stock",
     "apps.core",
 ]
 
