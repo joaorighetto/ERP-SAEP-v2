@@ -117,6 +117,19 @@ class TestPodeCriarRequisicaoPara:
 
         assert pode_criar_requisicao_para(pseudo_chefe, beneficiario) is False
 
+    def test_per03_chefe_setor_nao_pode_criar_para_outro_setor(self):
+        """PER-03 — negado: chefe com setor_responsavel não pode criar para outro setor."""
+        chefe_a = _criar_user("20013", PapelChoices.CHEFE_SETOR)
+        _criar_setor("Jurídico", chefe_a)
+
+        chefe_b = _criar_user("20014", PapelChoices.CHEFE_SETOR)
+        setor_b = _criar_setor("Financeiro", chefe_b)
+
+        beneficiario_b = _criar_user("20015", PapelChoices.SOLICITANTE, setor=setor_b)
+
+        # chefe_a tem setor_responsavel via criação acima, tenta criar para setor_b
+        assert pode_criar_requisicao_para(chefe_a, beneficiario_b) is False
+
     def test_per04_auxiliar_almoxarifado_pode_criar_para_qualquer_funcionario(self):
         """PER-04 — caminho feliz: auxiliar de Almoxarifado cria para qualquer setor."""
         chefe_alm = _criar_user("30001", PapelChoices.CHEFE_ALMOXARIFADO)
