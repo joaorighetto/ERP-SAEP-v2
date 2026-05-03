@@ -21,4 +21,4 @@ class CsrfTokenOutputSerializer(serializers.Serializer):
 
 class AuthLoginInputSerializer(serializers.Serializer):
     matricula_funcional = serializers.CharField()
-    password = serializers.CharField()
+    password = serializers.CharField(write_only=True)
