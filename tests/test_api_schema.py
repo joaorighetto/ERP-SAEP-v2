@@ -132,6 +132,10 @@ class TestOpenAPISchema:
         schema = self._get_schema()
         paths = schema["paths"]
 
+        assert "/api/v1/auth/csrf/" in paths
+        assert "/api/v1/auth/login/" in paths
+        assert "/api/v1/auth/logout/" in paths
+        assert "/api/v1/auth/me/" in paths
         assert "/api/v1/materials/{id}/" in paths
         assert "/api/v1/requisitions/" in paths
         assert "/api/v1/requisitions/{id}/submit/" in paths
@@ -150,6 +154,68 @@ class TestOpenAPISchema:
         item_schema = components["RequisicaoItemFulfillInput"]["properties"]
         assert "quantidade_entregue" in item_schema
         assert "justificativa_atendimento_parcial" in item_schema
+
+    def test_auth_endpoints_declaram_requests_responses_e_status_esperados(self):
+        """Verify auth endpoints expose explicit schema contracts."""
+        schema = self._get_schema()
+        paths = schema["paths"]
+
+        expected_operations = {
+            ("/api/v1/auth/csrf/", "get"): {
+                "request_body": False,
+                "success_codes": {"200"},
+                "success_ref": "#/components/schemas/CsrfTokenOutput",
+                "error_codes": set(),
+            },
+            ("/api/v1/auth/login/", "post"): {
+                "request_body": True,
+                "request_ref": "#/components/schemas/AuthLoginInput",
+                "success_codes": {"200"},
+                "success_ref": "#/components/schemas/AuthSessionOutput",
+                "error_codes": {"401", "403"},
+            },
+            ("/api/v1/auth/logout/", "post"): {
+                "request_body": False,
+                "success_codes": {"204"},
+                "success_ref": None,
+                "error_codes": {"403"},
+            },
+            ("/api/v1/auth/me/", "get"): {
+                "request_body": False,
+                "success_codes": {"200"},
+                "success_ref": "#/components/schemas/AuthSessionOutput",
+                "error_codes": {"401"},
+            },
+        }
+
+        error_ref = "#/components/schemas/ErrorResponse"
+
+        for (path, method), expectation in expected_operations.items():
+            operation = paths[path][method]
+            responses = operation["responses"]
+
+            if expectation["request_body"]:
+                assert "requestBody" in operation
+                assert (
+                    operation["requestBody"]["content"]["application/json"]["schema"]["$ref"]
+                    == expectation["request_ref"]
+                )
+            else:
+                assert "requestBody" not in operation
+
+            for code in expectation["success_codes"]:
+                assert code in responses
+                if expectation["success_ref"] is None:
+                    assert "content" not in responses[code]
+                else:
+                    assert (
+                        responses[code]["content"]["application/json"]["schema"]["$ref"]
+                        == expectation["success_ref"]
+                    )
+
+            for code in expectation["error_codes"]:
+                assert code in responses
+                assert responses[code]["content"]["application/json"]["schema"]["$ref"] == error_ref
 
     def test_error_response_schema_declara_trace_id(self):
         """Verify the standard error envelope includes trace_id in OpenAPI."""
