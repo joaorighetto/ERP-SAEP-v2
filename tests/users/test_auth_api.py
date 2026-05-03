@@ -180,3 +180,16 @@ class TestAuthAPI:
         response = client.post(reverse("auth-logout"), format="json")
 
         assert response.status_code == 403
+
+    def test_login_sem_campos_obrigatorios_retorna_400(self):
+        client, csrf_token = self._csrf_client()
+
+        response = client.post(
+            reverse("auth-login"),
+            {},  # payload vazio
+            format="json",
+            HTTP_X_CSRFTOKEN=csrf_token,
+        )
+
+        assert response.status_code == 400
+        assert response.data["error"]["code"] == "validation_error"
