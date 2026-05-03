@@ -8,6 +8,7 @@ dependencies = [
     "django-cors-headers>=4.9,<5",
     "django-filter>=25,<26",
     "djangorestframework>=3.17,<4",
+    "djangorestframework-stubs>=3.16.9",
     "drf-spectacular>=0.29,<1",
     "psycopg[binary]>=3.3,<4",
     "python-dotenv>=1.2,<2",
