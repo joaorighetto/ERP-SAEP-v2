@@ -22,6 +22,7 @@ from apps.notifications.models import (
     TipoNotificacao,
 )
 from apps.notifications.policies import pode_gerenciar_push_subscription
+from apps.requisitions.events import RequisicaoEvent
 from apps.requisitions.models import Requisicao, StatusRequisicao
 from apps.users.models import PapelChoices, User
 
@@ -488,18 +489,18 @@ def _notif_cancelada(requisicao: Requisicao) -> None:
     )
 
 
-def notificar(event, requisicao_id: int, actor_id: int) -> None:  # noqa: ARG001
-    from apps.requisitions.events import RequisicaoEvent
+_NOTIF_ROUTING = {
+    RequisicaoEvent.ENVIADA: _notif_enviada,
+    RequisicaoEvent.AUTORIZADA: _notif_autorizada,
+    RequisicaoEvent.RECUSADA: _notif_recusada,
+    RequisicaoEvent.ATENDIDA: _notif_atendida,
+    RequisicaoEvent.ATENDIDA_PARCIALMENTE: _notif_atendida_parcialmente,
+    RequisicaoEvent.CANCELADA: _notif_cancelada,
+}
 
-    _routing = {
-        RequisicaoEvent.ENVIADA: _notif_enviada,
-        RequisicaoEvent.AUTORIZADA: _notif_autorizada,
-        RequisicaoEvent.RECUSADA: _notif_recusada,
-        RequisicaoEvent.ATENDIDA: _notif_atendida,
-        RequisicaoEvent.ATENDIDA_PARCIALMENTE: _notif_atendida_parcialmente,
-        RequisicaoEvent.CANCELADA: _notif_cancelada,
-    }
-    handler = _routing.get(event)
+
+def notificar(event: RequisicaoEvent, requisicao_id: int, actor_id: int) -> None:  # noqa: ARG001  # actor_id reserved: future audit/template use
+    handler = _NOTIF_ROUTING.get(event)
     if handler is None:
         logger.warning("notificar: evento sem handler na routing table: %s", event)
         return

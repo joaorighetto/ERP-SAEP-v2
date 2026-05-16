@@ -20,6 +20,7 @@ EventPayload = dict[str, Any]
 EventHandler = Callable[[EventPayload], None]
 
 _subscribers: dict[str, list[EventHandler]] = defaultdict(list)
+_enum_registrations: set[tuple[str, int]] = set()
 
 
 def _subscribe_single(event_name: str, handler: EventHandler) -> None:
@@ -29,8 +30,14 @@ def _subscribe_single(event_name: str, handler: EventHandler) -> None:
 
 
 def _register(event_name_or_enum, handler) -> None:
-    if isinstance(event_name_or_enum, type) and issubclass(event_name_or_enum, str):
+    from enum import Enum
+
+    if isinstance(event_name_or_enum, type) and issubclass(event_name_or_enum, Enum):
         for event in event_name_or_enum:
+            key = (str(event), id(handler))
+            if key in _enum_registrations:
+                continue
+            _enum_registrations.add(key)
             _event = event
 
             def _wrapper(payload, e=_event, f=handler):
@@ -65,6 +72,7 @@ def subscribe(event_name_or_enum, handler: EventHandler | None = None):
 
 def clear_subscribers() -> None:
     _subscribers.clear()
+    _enum_registrations.clear()
 
 
 def publish(event_name: str, payload: EventPayload) -> None:

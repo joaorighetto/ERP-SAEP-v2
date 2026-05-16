@@ -1,5 +1,6 @@
 import pytest
 
+import apps.core.events as core_events
 from apps.core.events import _subscribers, clear_subscribers, publish
 from apps.notifications.handlers import handle_requisicao_event, register_event_handlers
 from apps.requisitions.events import RequisicaoEvent
@@ -27,12 +28,14 @@ class TestHandleRequisicaoEvent:
 class TestRegisterEventHandlers:
     @pytest.fixture(autouse=True)
     def isolate_subscribers(self):
-        saved = {k: list(v) for k, v in _subscribers.items()}
+        saved_subs = {k: list(v) for k, v in _subscribers.items()}
+        saved_enum = set(core_events._enum_registrations)
         clear_subscribers()
         yield
         clear_subscribers()
-        for k, v in saved.items():
+        for k, v in saved_subs.items():
             _subscribers[k].extend(v)
+        core_events._enum_registrations.update(saved_enum)
 
     def test_registra_handler_para_cada_valor_de_requisicao_event(self, monkeypatch):
         chamadas = []
@@ -54,3 +57,13 @@ class TestRegisterEventHandlers:
         publish(RequisicaoEvent.AUTORIZADA, {"requisicao_id": 99, "actor_id": 55})
 
         assert chamadas == [(RequisicaoEvent.AUTORIZADA, 99, 55)]
+
+    def test_register_event_handlers_idempotente(self, monkeypatch):
+        chamadas = []
+        monkeypatch.setattr("apps.notifications.handlers.notificar", lambda *a: chamadas.append(a))
+        register_event_handlers()
+        register_event_handlers()
+
+        publish(RequisicaoEvent.CANCELADA, {"requisicao_id": 1, "actor_id": 2})
+
+        assert len(chamadas) == 1, "duplo register não deve duplicar handlers"
