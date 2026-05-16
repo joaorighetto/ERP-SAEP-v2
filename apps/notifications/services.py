@@ -510,5 +510,13 @@ def notificar(event: RequisicaoEvent, requisicao_id: int, actor_id: int) -> None
     if handler is None:
         logger.warning("notificar: evento sem handler na routing table: %s", event)
         return
-    requisicao = _carregar_requisicao_para_notificacao(requisicao_id)
-    handler(requisicao)
+    try:
+        requisicao = _carregar_requisicao_para_notificacao(requisicao_id)
+        handler(requisicao)
+    except Exception:
+        logger.exception(
+            "notificar: falha ao processar evento=%s requisicao_id=%s actor_id=%s",
+            event,
+            requisicao_id,
+            actor_id,
+        )

@@ -3,6 +3,7 @@ import pytest
 import apps.core.events as core_events
 from apps.core.events import _subscribers, clear_subscribers, publish
 from apps.notifications.handlers import handle_requisicao_event, register_event_handlers
+from apps.notifications.services import notificar
 from apps.requisitions.events import RequisicaoEvent
 
 
@@ -86,3 +87,27 @@ class TestRegisterEventHandlers:
         publish("evento_desconhecido", {"requisicao_id": 1, "actor_id": 2})
 
         assert chamadas == [], "evento fora do domínio RequisicaoEvent não deve disparar notificar"
+
+
+class TestNotificar:
+    def test_isola_excecao_de_carga(self, monkeypatch):
+        monkeypatch.setattr(
+            "apps.notifications.services._carregar_requisicao_para_notificacao",
+            lambda _: (_ for _ in ()).throw(Exception("DB indisponível")),
+        )
+
+        # não deve propagar — falha de notificação não pode quebrar o fluxo chamador
+        notificar(RequisicaoEvent.AUTORIZADA, requisicao_id=1, actor_id=2)
+
+    def test_isola_excecao_do_handler(self, monkeypatch):
+        fake_req = object()
+        monkeypatch.setattr(
+            "apps.notifications.services._carregar_requisicao_para_notificacao",
+            lambda _: fake_req,
+        )
+        monkeypatch.setattr(
+            "apps.notifications.services._NOTIF_ROUTING",
+            {RequisicaoEvent.AUTORIZADA: lambda _: (_ for _ in ()).throw(RuntimeError("boom"))},
+        )
+
+        notificar(RequisicaoEvent.AUTORIZADA, requisicao_id=1, actor_id=2)

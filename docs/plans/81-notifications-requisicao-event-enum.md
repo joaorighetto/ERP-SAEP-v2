@@ -53,8 +53,9 @@ CANCELADA         → notifica criador+beneficiario
 
 ```python
 # Suporta:
-# 1. subscribe(str, handler) — forma atual, inalterada
-# 2. @subscribe(EnumClass)   — novo: registra para todos os valores do enum
+# 1. subscribe(str, handler)         — forma atual, inalterada
+# 2. subscribe(EnumClass, handler)   — novo: registra para todos os valores do enum
+# 3. @subscribe(EnumClass)           — forma decorator equivalente
 #    handler chamado com (event: EnumMember, **payload_dict)
 ```
 
