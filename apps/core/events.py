@@ -22,10 +22,40 @@ EventHandler = Callable[[EventPayload], None]
 _subscribers: dict[str, list[EventHandler]] = defaultdict(list)
 
 
-def subscribe(event_name: str, handler: EventHandler) -> None:
+def _subscribe_single(event_name: str, handler: EventHandler) -> None:
     handlers = _subscribers[event_name]
     if handler not in handlers:
         handlers.append(handler)
+
+
+def subscribe(event_name_or_enum, handler: EventHandler | None = None):
+    """Register handler for an event.
+
+    Two forms:
+      subscribe("event.name", handler_fn)         — direct registration
+      @subscribe(SomeStrEnumClass)                 — decorator; registers for all enum
+                                                     values, calling handler(event, **payload)
+    """
+    if handler is not None:
+        _subscribe_single(str(event_name_or_enum), handler)
+        return
+
+    target = event_name_or_enum
+
+    def decorator(fn):
+        if isinstance(target, type) and issubclass(target, str):
+            for event in target:
+                _event = event
+
+                def _wrapper(payload, e=_event, f=fn):
+                    f(e, **payload)
+
+                _subscribe_single(str(_event), _wrapper)
+        else:
+            _subscribe_single(str(target), fn)
+        return fn
+
+    return decorator
 
 
 def clear_subscribers() -> None:
