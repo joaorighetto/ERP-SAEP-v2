@@ -67,3 +67,22 @@ class TestRegisterEventHandlers:
         publish(RequisicaoEvent.CANCELADA, {"requisicao_id": 1, "actor_id": 2})
 
         assert len(chamadas) == 1, "duplo register não deve duplicar handlers"
+
+    def test_payload_invalido_nao_chama_notificar(self, monkeypatch):
+        chamadas = []
+        monkeypatch.setattr("apps.notifications.handlers.notificar", lambda *a: chamadas.append(a))
+        register_event_handlers()
+
+        # actor_id ausente → TypeError no wrapper; publish silencia a exceção
+        publish(RequisicaoEvent.AUTORIZADA, {"requisicao_id": 99})
+
+        assert chamadas == [], "payload inválido não deve disparar notificar"
+
+    def test_evento_fora_do_dominio_nao_chama_notificar(self, monkeypatch):
+        chamadas = []
+        monkeypatch.setattr("apps.notifications.handlers.notificar", lambda *a: chamadas.append(a))
+        register_event_handlers()
+
+        publish("evento_desconhecido", {"requisicao_id": 1, "actor_id": 2})
+
+        assert chamadas == [], "evento fora do domínio RequisicaoEvent não deve disparar notificar"

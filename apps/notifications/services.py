@@ -421,6 +421,12 @@ def _carregar_requisicao_para_notificacao(requisicao_id: int) -> Requisicao:
 
 def _notif_enviada(requisicao: Requisicao) -> None:
     chefe = requisicao.setor_beneficiario.chefe_responsavel
+    if chefe is None:
+        logger.warning(
+            "Requisição %s enviada sem chefe_responsavel; notificação ignorada.",
+            requisicao.pk,
+        )
+        return
     criar_notificacoes_usuarios_unicos(
         destinatarios=[chefe],
         tipo=TipoNotificacao.REQUISICAO_ENVIADA_AUTORIZACAO,

@@ -3,7 +3,7 @@
 ## Scope
 
 **Muda:**
-- `apps/requisitions/events.py` — novo arquivo com `RequisicaoEvent(str, Enum)`
+- `apps/requisitions/events.py` — novo arquivo com `RequisicaoEvent(StrEnum)`
 - `apps/core/events.py` — `subscribe()` estendida para suportar `@subscribe(EnumClass)`
 - `apps/notifications/services.py` — adiciona `notificar()` com routing table interna
 - `apps/notifications/handlers.py` — substitui 6 handlers individuais por `@subscribe(RequisicaoEvent)`
@@ -40,7 +40,7 @@
 
 ## Routing table em notificar()
 
-```
+```text
 ENVIADA           → notifica chefe_responsavel; envia push aguardando_autorizacao
 AUTORIZADA        → notifica criador+beneficiario; notifica roles almoxarifado
 RECUSADA          → notifica criador+beneficiario
