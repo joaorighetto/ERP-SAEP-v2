@@ -28,31 +28,36 @@ def _subscribe_single(event_name: str, handler: EventHandler) -> None:
         handlers.append(handler)
 
 
+def _register(event_name_or_enum, handler) -> None:
+    if isinstance(event_name_or_enum, type) and issubclass(event_name_or_enum, str):
+        for event in event_name_or_enum:
+            _event = event
+
+            def _wrapper(payload, e=_event, f=handler):
+                f(e, **payload)
+
+            _subscribe_single(str(_event), _wrapper)
+    else:
+        _subscribe_single(str(event_name_or_enum), handler)
+
+
 def subscribe(event_name_or_enum, handler: EventHandler | None = None):
     """Register handler for an event.
 
     Two forms:
-      subscribe("event.name", handler_fn)         — direct registration
-      @subscribe(SomeStrEnumClass)                 — decorator; registers for all enum
-                                                     values, calling handler(event, **payload)
+      subscribe("event.name", handler_fn)         — direct, single event
+      subscribe(SomeStrEnumClass, handler_fn)      — direct, all enum values
+      @subscribe(SomeStrEnumClass)                 — decorator, all enum values
+    When an Enum class is used, handler is called as handler(event, **payload).
     """
     if handler is not None:
-        _subscribe_single(str(event_name_or_enum), handler)
+        _register(event_name_or_enum, handler)
         return
 
     target = event_name_or_enum
 
     def decorator(fn):
-        if isinstance(target, type) and issubclass(target, str):
-            for event in target:
-                _event = event
-
-                def _wrapper(payload, e=_event, f=fn):
-                    f(e, **payload)
-
-                _subscribe_single(str(_event), _wrapper)
-        else:
-            _subscribe_single(str(target), fn)
+        _register(target, fn)
         return fn
 
     return decorator
