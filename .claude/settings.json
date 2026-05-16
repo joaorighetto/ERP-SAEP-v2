@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__serena__get_symbols_overview",
+      "mcp__plugin_serena_serena__check_onboarding_performed",
+      "mcp__plugin_serena_serena__list_memories",
+      "mcp__plugin_serena_serena__find_referencing_symbols",
+      "mcp__plugin_context7_context7__query-docs"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if jq -r '.tool_input.command' | grep -q '^git commit'; then if [ \"$(git rev-parse --abbrev-ref HEAD)\" = \"main\" ]; then echo '{\"continue\":false,\"stopReason\":\"refuse to commit to main — create a feature branch first\"}'; fi; fi"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|mcp__plugin_serena_serena__replace_content|mcp__serena__replace_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ruff check --fix $CLAUDE_FILE_PATHS 2>&1 | tail -20",
+            "statusMessage": "Running ruff check --fix",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

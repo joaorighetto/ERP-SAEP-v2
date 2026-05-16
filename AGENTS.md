@@ -1,18 +1,25 @@
 # AGENTS.md
 
-## Agent skills
+## Habilidades dos agentes
 
-### Issue tracker
+### Rastreador de issues
 
-Issues for this repo live in GitHub Issues. Use `gh`. See `docs/agents/issue-tracker.md`.
+As issues deste repositório ficam no GitHub Issues. Use `gh`. Veja `docs/agents/issue-tracker.md`.
 
-### Triage labels
+### Labels de triagem
 
-Repo uses default triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+O repositório usa labels padrão de triagem: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. Veja `docs/agents/triage-labels.md`.
 
-### Domain docs
+### Documentação de domínio
 
-Repo is single-context. Read root `CONTEXT.md`, root `docs/adr/`, then `docs/design-acesso-rapido/` first and `docs/design-acesso-ocasional/` when need depth. See `docs/agents/domain.md`.
+O repositório é de contexto único. Leia primeiro o `CONTEXT.md` na raiz, `docs/adr/` na raiz e depois `docs/design-acesso-rapido/`; consulte `docs/design-acesso-ocasional/` quando precisar de mais profundidade. Veja `docs/agents/domain.md`.
+
+## Preferências de ferramentas MCP
+
+- Sempre use o Serena MCP para navegação e edição de código (`find_symbol`, `replace_content`) em vez de Read/Edit neste codebase.
+- Sempre consulte o Context7 MCP antes de implementar algo contra bibliotecas/frameworks de terceiros (Django, DRF, TanStack, React etc.).
+- Prefira ferramentas MCP a Read/Bash genéricos ao explorar a estrutura do código — Serena é eficiente em tokens.
+- Para revisões de código, delegue ao agente `senior-code-reviewer` e produza achados estruturados.
 
 ## Projeto
 
@@ -32,36 +39,31 @@ Para economizar tokens e manter os agentes focados, a documentação de design d
 
 - Django 6: `/django/django/6_0a1`
 - DRF: `/websites/django-rest-framework`
-- React Router / TanStack Router / TanStack Query / TanStack Table / openapi-typescript: consultar via Context7 quando a tarefa tocar a SPA do piloto
+- TanStack Router: `/tanstack/router`
+- TanStack Query: `/tanstack/query`
+- TanStack Table: `/tanstack/table`
+- openapi-typescript + openapi-fetch: `/websites/openapi-ts_dev`
+- React Hook Form: `/react-hook-form/react-hook-form`
+- Zod: `/colinhacks/zod`
+- shadcn/ui: `/shadcn-ui/ui`
 
-### Exemplos positivos do que fazer:
+### Quando consultar o Context7 (gatilhos):
 
-- Implementando ou alterando um `Model`: consultar documentação de Django Models, Fields, Meta options, constraints, indexes, managers e validação de modelos conforme a mudança.
-- Implementando relacionamento entre entidades: consultar documentação de `ForeignKey`, `OneToOneField`, `ManyToManyField`, `on_delete`, `related_name`, constraints e comportamento de queries relacionadas.
-- Implementando constraints ou índices: consultar documentação de `UniqueConstraint`, `CheckConstraint`, `Index`, índices condicionais/parciais quando aplicável e limitações do banco usado pelo projeto.
-- Implementando transações ou mutações críticas de saldo/estoque: consultar documentação de `transaction.atomic()`, `select_for_update()`, comportamento transacional e locking no Django.
-- Implementando DRF Serializer: consultar documentação de Serializers, ModelSerializer, validação por campo, validação de objeto, campos read-only/write-only e representação de erros.
-- Implementando ViewSet/APIView: consultar documentação de DRF ViewSets, Generic Views, Mixins, Routers, status codes, permissions, authentication e paginação/filtros quando aplicável.
-- Implementando autorização: consultar documentação de DRF Permissions e autenticação, além das políticas internas do projeto em `policies.py` ou equivalente.
-- Implementando filtros, busca ou ordenação: consultar documentação de DRF Filtering, Django QuerySet API, lookup expressions e performance de queries.
-- Implementando endpoint com upload/download, arquivos ou campos especiais: consultar documentação específica de parsers, renderers, FileField/ImageField e tratamento de request/response no DRF.
-- Implementando testes: consultar documentação de Django TestCase/TransactionTestCase, pytest quando usado no projeto, DRF APIClient/APIRequestFactory e ferramentas adequadas para o tipo de comportamento testado.
-- Alterando comandos de management, signals, admin ou settings: consultar a documentação específica da área alterada antes de editar.
-- Implementando a SPA do piloto: consultar `docs/design-acesso-rapido/frontend-arquitetura-piloto.md`, o ADR do frontend e a documentação atual das bibliotecas frontend envolvidas via Context7 antes de fechar a solução.
-- Alterando a fundação já existente da SPA: preservar `frontend/` como fonte de verdade do shell, do client OpenAPI, dos smoke tests e dos comandos `frontend-*` no `Makefile`.
-- Antes de concluir, conferir se a implementação continua alinhada com a documentação consultada, com `docs/design-acesso-rapido/` e com os guardrails deste arquivo.
+| Área alterada | Consultar |
+|---|---|
+| `Model`, fields, constraints, indexes | Django Models, Fields, Meta, Constraints |
+| Relacionamentos (`FK`, `M2M`, `O2O`) | Django ForeignKey, related_name, on_delete |
+| Transações, locks, saldo | Django `transaction.atomic()`, `select_for_update()` |
+| DRF Serializer | Serializers, ModelSerializer, validação, representação |
+| ViewSet / APIView | DRF ViewSets, Generic Views, Mixins, Routers |
+| Autorização | DRF Permissions + `policies.py` do projeto |
+| Filtros, busca, ordenação | DRF Filtering, QuerySet API, lookup expressions |
+| Testes | Django TestCase, pytest-django, DRF APIClient |
+| SPA do piloto (qualquer arquivo em `frontend/`) | `docs/design-acesso-rapido/frontend-arquitetura-piloto.md` + IDs acima |
+| Management commands, signals, admin, settings | Documentação específica da área |
 
-### Exemplos negativos do que **não** fazer:
+**Nunca**: implementar Django/DRF sem consultar Context7. Nunca assumir APIs sem confirmar versão atual. Nunca misturar versões de Django/DRF/libs. Nunca iniciar features da SPA antes de confirmar gate do bloco 0.
 
-- Não implementar ou alterar código Django/DRF usando apenas memória, conhecimento prévio ou tentativa e erro sem consultar o Context7.
-- Não procurar documentação genérica quando a tarefa exige documentação específica. Exemplo: ao alterar um `ModelViewSet`, não consultar apenas documentação geral de Django; consulte DRF ViewSets, Routers, Serializers e Permissions conforme o caso.
-- Não assumir APIs, parâmetros ou comportamentos de bibliotecas sem confirmar na documentação atual. Exemplo: não inventar argumentos de `Serializer`, `QuerySet`, `transaction.atomic()` ou `select_for_update()`.
-- Não copiar padrões de código existente se houver dúvida sobre compatibilidade com a versão atual das bibliotecas; confirme com Context7 antes.
-- Não usar posts de blog, respostas antigas, snippets aleatórios ou conhecimento desatualizado como fonte principal quando houver documentação oficial disponível via Context7.
-- Não fazer uma implementação ampla e só consultar documentação depois que os testes falharem; consulte a documentação antes de definir a solução.
-- Não ignorar documentação de segurança, autenticação, autorização, transações, validação ou concorrência quando a mudança tocar esses temas.
-- Não misturar conceitos de versões diferentes do Django, DRF ou bibliotecas relacionadas sem validar a versão usada pelo projeto.
-- Não iniciar features operacionais da SPA antes da conclusão do bloco 0 de APIs habilitadoras do backend definido em `docs/design-acesso-rapido/frontend-arquitetura-piloto.md` e no backlog do piloto.
 
 ## Ambiente de desenvolvimento efêmero
 
@@ -76,6 +78,8 @@ Durante a fase inicial, o ambiente local é descartável.
 - `rtk make frontend-init` instala dependências da SPA e prepara o navegador Chromium do Playwright;
 - `rtk make frontend-gen-api` exporta `frontend/openapi/schema.json` e regenera `frontend/src/shared/api/schema.d.ts`;
 - `rtk make frontend-dev`, `rtk make frontend-build`, `rtk make frontend-lint`, `rtk make frontend-test` e `rtk make frontend-e2e` são os entrypoints operacionais oficiais da SPA;
+- `rtk make frontend-e2e` requer banco limpo com seed: executar `rtk make resetdb` e `rtk make seed-pilot-minimo` antes;
+- `rtk make run` sobe o servidor de desenvolvimento Django na porta padrão;
 - neste momento do projeto, toda edição de `models`/schema deve ser seguida de `rtk make setup`, para não depender de gestão manual de migrations.
 - migrations de apps devem ser tratadas como artefato efêmero: antes de testar ou concluir uma implementação que altere schema, apagar e recriar as migrations locais do zero, simulando uma primeira execução limpa do app.
 - confeccionar novos arquivos de migration não faz parte da entrega normal do trabalho neste contexto efêmero.
@@ -126,7 +130,15 @@ Durante a fase inicial, o ambiente local é descartável.
 - Não implemente frontend do piloto em desacordo com o ADR macro e o guia operacional do frontend.
 - Não corrija bug sem adicionar teste que falharia antes da correção.
 
-## GitHub Flow
+## Fluxo de trabalho Git
+
+- **Nunca faça commit diretamente na main** — sempre crie uma branch de feature primeiro.
+- Confirme a branch atual antes de qualquer operação de commit.
+- Ao abrir PRs em repositórios forkados, aponte para o remote upstream, não para origin.
+- Nomes de branch: `feat/{desc}`, `fix/{desc}`, `refactor/{desc}`, `test/{desc}`, `docs/{desc}`, `chore/{desc}`.
+- Commits devem ser pequenos, coesos e reversíveis — uma unidade lógica por commit.
+
+## Fluxo GitHub
 
 - `main` sempre estável — nenhum commit direto
 - Antes de implementar crie branches: `feat/{descricao-curta}`, `fix/{descricao-curta}`, `chore/{descricao-curta}`, `docs/{descricao-curta}`, `refactor/{descricao-curta}`, `test/{descricao-curta}`
@@ -157,7 +169,20 @@ test(stock): cover available quantity calculation
 docs: update pilot data modeling notes
 
 
-## Code Review
+## Fluxo de revisão de código
 
+- Para revisões de código, **delegue ao agente `senior-code-reviewer`** e produza achados estruturados com níveis de severidade (Critical/Major/Minor).
+- Sempre inclua **referências a números de linha** e verifique que correspondem ao código atual.
+- Entregue **revisões completas** — não truncar. Se forem longas, salve os achados em `docs/code-reviews/<branch-or-pr>-<date>.md` com seções estruturadas.
 - Revisões (automáticas ou manuais) devem seguir `docs/code-review-guidelines.md`.
 - Em caso de conflito com sugestões genéricas, prevalecem os invariantes arquiteturais e de domínio documentados no projeto.
+
+
+## Execução de testes
+
+- **Sempre use o sistema RTK com tee para capturar a saída dos testes** para análise de falhas: `<rtk-command> 2>&1 | tee /tmp/test-output.log`; depois leia o log. **Nunca redirecione para `tail` nem dependa de saída truncada.**
+- Rode a suíte completa de testes após qualquer refactor e confirme a contagem de testes passados antes de commitar.
+- Ao depurar falhas de teste, capture o traceback completo antes de tentar corrigir.
+- Para testes Django: `rtk make test` (usa `DJANGO_SETTINGS_MODULE=config.settings.test` com opções seguras do pytest).
+- Para testes de frontend: `rtk make frontend-test` (Vitest), `rtk make frontend-e2e` (Playwright com seedata).
+- Verifique a consistência do estado do banco de dados: resete com `rtk make resetdb` e recarregue os seeds com `rtk make seed-pilot-minimo` antes do E2E.

@@ -273,3 +273,155 @@ reviews:
         estado atual materializado do v2. Evite trazer regras específicas do repo
         antigo que ainda não existem aqui, salvo como invariantes futuras claramente
         documentadas.
+
+    - path: "apps/notifications/**/*.py"
+      instructions: >
+        Foque em notificações push (Web Push/VAPID), handlers de eventos e entrega
+        assíncrona via publish_on_commit().
+        Regras críticas: handlers não devem decidir o sucesso da operação principal;
+        side effects de notificação devem ser registrados pós-transação, nunca dentro
+        do bloco atômico que altera o domínio.
+        Revise models de assinatura push (endpoint, chaves), serializers de preferências,
+        policies de visibilidade (usuário só acessa próprias notificações) e serviços
+        de envio para garantir que falhas de entrega não propaguem exceção para o chamador.
+        Sinalize qualquer exposição de chave VAPID privada, armazenamento de endpoint sem
+        validação de origem ou ausência de limpeza de assinaturas expiradas.
+
+    - path: "apps/analytics/**/*.py"
+      instructions: >
+        Foque em coleta de métricas operacionais (tempos de ciclo de requisição, SLA,
+        alertas de prazo) e integridade dos dados agregados.
+        Analytics deve ser read-only sobre dados de domínio; não deve gravar diretamente
+        em tabelas de requisições, estoque ou usuários.
+        Revise queries de agregação para N+1, ausência de índices em colunas filtradas
+        por data/status e exposição de dados cruzados entre setores (visibilidade por
+        perfil deve ser respeitada mesmo em endpoints analíticos).
+        Sinalize endpoints sem paginação quando o conjunto de dados puder crescer
+        ilimitadamente, métricas que vazem informações de setores não autorizados ao
+        usuário corrente e ausência de cache quando queries forem custosas e os dados
+        tolerarem staleness.
+
+    - path: "apps/core/events.py"
+      instructions: >
+        Este módulo é a infraestrutura de eventos pós-transação (publish_on_commit).
+        Revise com foco em: garantia de que handlers só disparam após commit confirmado,
+        ausência de acoplamento de lógica de domínio dentro de handlers genéricos,
+        comportamento em caso de rollback (handlers não devem ser chamados) e
+        reentrada/idempotência de handlers quando o mesmo evento for emitido mais de uma vez.
+        Sinalize qualquer pattern que execute side effects (envio de notificação, chamada
+        externa, gravação derivada) dentro de transaction.atomic() em vez de pós-commit.
+
+    - path: "frontend/openapi/schema.json"
+      instructions: >
+        Este arquivo é o contrato vivo entre backend e frontend. Qualquer divergência
+        entre este schema e os endpoints DRF ativos é um bug de contrato.
+        Revise mudanças no schema com foco em: campos removidos ou renomeados que quebram
+        o client TypeScript gerado, alterações de tipo (nullable, array, objeto) sem
+        atualização dos consumers, novos endpoints adicionados ao backend mas ausentes
+        aqui (ou vice-versa) e remoção de operationId que invalide referências tipadas.
+        Sinalize PRs que alterem endpoints Django/DRF sem regenerar este schema
+        (rtk make frontend-gen-api) e qualquer mudança manual neste arquivo que não
+        venha de geração automática.
+
+    - path: "frontend/src/shared/api/**"
+      instructions: >
+        Este pacote é a fronteira de integração entre SPA e backend.
+        client.ts configura o client openapi-fetch tipado; schema.d.ts é gerado — não
+        edite manualmente.
+        Revise: configuração de credentials (include para session auth + CSRF), tratamento
+        de 401 (redirecionar para login sem loop), propagação de CSRF token em mutações,
+        erros tipados com o envelope {"error": {"code","message","details","trace_id"}},
+        ausência de hardcode de URLs base e coerência entre os tipos do schema gerado e
+        o que o backend realmente retorna.
+        Sinalize qualquer swallowing silencioso de erro de rede, retry automático sem
+        idempotência garantida e exposição de dados de um setor para usuário de outro.
+
+    - path: "frontend/src/features/auth/**"
+      instructions: >
+        Foque em guards de rota, gerenciamento de sessão e redirect pós-login.
+        Regras críticas: guards devem ser a única fonte de verdade para acesso a rotas
+        protegidas; não duplicar lógica de autorização em componentes individuais.
+        Revise: sessão baseada em cookie HttpOnly (não localStorage), verificação de
+        papel/perfil para redirecionamento correto (papel desconhecido → /unknown-role),
+        ausência de dados sensíveis no estado do router, comportamento em tab duplicada
+        (sessão compartilhada via cookie, não memória JS) e logout que invalida sessão
+        no backend antes de limpar estado local.
+        Sinalize qualquer armazenamento de token em localStorage/sessionStorage,
+        verificação de autenticação apenas no cliente sem validação backend e guards
+        que possam ser bypassados por navegação direta.
+
+    - path: "frontend/src/features/**"
+      instructions: >
+        Features encapsulam domínio de produto na SPA. Cada feature deve usar o client
+        OpenAPI tipado (nunca fetch/axios direto), delegar mutações ao TanStack Query e
+        nunca acessar store/estado de outra feature diretamente.
+        Revise: coerência entre operações da feature e os endpoints disponíveis no
+        schema.d.ts, ausência de lógica de negócio duplicada do backend (regras de
+        transição de estado, cálculo de saldo e autorização pertencem ao backend),
+        invalidação de cache do TanStack Query após mutações com sucesso, tratamento
+        de estados de loading/error/empty em componentes e acessibilidade básica em
+        elementos interativos.
+        Sinalize features que construam URLs manualmente em vez de usar operationId
+        do client tipado, polling sem cleanup em desmontagem de componente e qualquer
+        dado de domínio computado no frontend que deveria vir do backend.
+
+    - path: "frontend/src/routes/**"
+      instructions: >
+        Rotas são componentes finos: buscam dados via TanStack Query, aplicam guards
+        e delegam rendering para features.
+        Revise: toda rota protegida deve ter guard explícito no beforeLoad/loader,
+        ausência de lógica de negócio inline (mover para features/), loader que pré-busca
+        dados necessários para evitar waterfall de fetch, tratamento de notFound e
+        errorComponent em rotas que dependem de parâmetros de URL e coerência entre
+        a rota e o contrato de navegação em frontend-arquitetura-piloto.md.
+        Sinalize rotas sem guard que deveriam ser protegidas, parâmetros de rota não
+        validados usados diretamente em queries e qualquer navegação programática que
+        ignore o router (window.location.href).
+
+    - path: "frontend/src/app/**"
+      instructions: >
+        App shell, providers e configuração do router/query-client.
+        Revise: QueryClient com staleTime/gcTime adequados para o padrão de uso (dados
+        de usuário, listas operacionais), configuração de retry que não repita mutações
+        falhas automaticamente, providers na ordem correta (QueryClientProvider antes
+        de RouterProvider), ausência de imports de domínio direto no shell e configuração
+        do router com defaultPreload e errorComponent global.
+        Sinalize qualquer configuração de retry: true no QueryClient para mutações,
+        ausência de Suspense/ErrorBoundary global e imports circulares entre app/ e
+        features/.
+
+    - path: "frontend/src/tests/**"
+      instructions: >
+        Foque em cobertura dos contratos críticos da SPA: guards de rota, client API,
+        lógica de feature (SLA, draftSteps, session) e smoke tests de renderização.
+        Testes de unidade devem mockar o client OpenAPI, não fazer fetch real.
+        Testes E2E (Playwright) devem cobrir o caminho feliz de login, criação de
+        requisição e navegação entre papéis.
+        Sinalize testes que dependem de ordem de execução, mocks que não refletem o
+        schema real do backend, ausência de teste para guard de rota crítica e qualquer
+        import de implementação interna em vez de interface pública da feature.
+
+    - path: "frontend/*.config.{ts,js}"
+      instructions: >
+        Arquivos de configuração de build, test e lint do frontend (vite.config.ts,
+        vitest.config.ts, playwright.config.ts, eslint.config.js).
+        Revise: alias de path coerentes com tsconfig, configuração de test environment
+        (jsdom para unit, chromium para e2e), proxy de dev apontando para backend local,
+        ausência de segredos hardcoded, coverage mínimo configurado e regras de lint
+        alinhadas ao projeto (sem console.log, imports não utilizados).
+        Sinalize configuração de proxy que vaze para build de produção, test timeout
+        muito baixo para testes E2E e qualquer plugin de Vite que altere o bundle
+        sem justificativa de performance documentada.
+
+    - path: "frontend/package.json"
+      instructions: >
+        Revise dependências com foco em: versões pinadas ou com range compatível com
+        lockfile (pnpm), ausência de dependências redundantes que dupliquem
+        funcionalidade já fornecida por TanStack Router/Query ou openapi-fetch,
+        scripts npm alinhados aos entrypoints do Makefile (frontend-dev, frontend-build,
+        frontend-test, frontend-e2e, frontend-lint, frontend-gen-api) e devDependencies
+        não vazando para produção.
+        Sinalize upgrades de TanStack Router/Query sem revisão de breaking changes,
+        adição de biblioteca de state management global (Zustand, Redux) sem ADR
+        justificando desvio da arquitetura baseada em TanStack Query e qualquer
+        dependência com vulnerabilidade conhecida.
