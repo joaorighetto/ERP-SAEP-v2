@@ -1,15 +1,8 @@
 from django.db import connection, transaction
 
 from apps.core.api.exceptions import DomainConflict
-from apps.core.events import (
-    REQUISICAO_AUTORIZADA,
-    REQUISICAO_CANCELADA,
-    REQUISICAO_ENVIADA_AUTORIZACAO,
-    REQUISICAO_PRONTA_PARA_RETIRADA,
-    REQUISICAO_RECUSADA,
-    REQUISICAO_RETIRADA,
-    publish_on_commit,
-)
+from apps.core.events import publish_on_commit
+from apps.requisitions.events import RequisicaoEvent
 from apps.requisitions.models import EventoTimeline, Requisicao, StatusRequisicao, TipoEvento
 
 TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
@@ -23,7 +16,7 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
             "status",
         ),
         "side_effects": (),
-        "notification_event": REQUISICAO_AUTORIZADA,
+        "notification_event": RequisicaoEvent.AUTORIZADA,
     },
     "autorizar_parcial": {
         "from_status": (StatusRequisicao.AGUARDANDO_AUTORIZACAO,),
@@ -35,7 +28,7 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
             "status",
         ),
         "side_effects": (),
-        "notification_event": REQUISICAO_AUTORIZADA,
+        "notification_event": RequisicaoEvent.AUTORIZADA,
     },
     "recusar": {
         "from_status": (StatusRequisicao.AGUARDANDO_AUTORIZACAO,),
@@ -48,7 +41,7 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
             "status",
         ),
         "side_effects": (),
-        "notification_event": REQUISICAO_RECUSADA,
+        "notification_event": RequisicaoEvent.RECUSADA,
     },
     "atender_total": {
         "from_status": (StatusRequisicao.AUTORIZADA,),
@@ -61,7 +54,7 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
             "status",
         ),
         "side_effects": (),
-        "notification_event": REQUISICAO_PRONTA_PARA_RETIRADA,
+        "notification_event": RequisicaoEvent.ATENDIDA,
     },
     "atender_parcial": {
         "from_status": (StatusRequisicao.AUTORIZADA,),
@@ -74,7 +67,7 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
             "status",
         ),
         "side_effects": (),
-        "notification_event": REQUISICAO_PRONTA_PARA_RETIRADA,
+        "notification_event": RequisicaoEvent.ATENDIDA_PARCIALMENTE,
     },
     "retirar": {
         "from_status": (
@@ -89,7 +82,7 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
             "status",
         ),
         "side_effects": (),
-        "notification_event": REQUISICAO_RETIRADA,
+        "notification_event": None,
     },
     "cancelar_pos_autorizacao_sem_saldo": {
         "from_status": (StatusRequisicao.AUTORIZADA,),
@@ -102,7 +95,7 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
             "status",
         ),
         "side_effects": (),
-        "notification_event": REQUISICAO_CANCELADA,
+        "notification_event": RequisicaoEvent.CANCELADA,
     },
     "cancelar_pre_autorizacao": {
         "from_status": (
@@ -116,7 +109,7 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
             "status",
         ),
         "side_effects": (),
-        "notification_event": REQUISICAO_CANCELADA,
+        "notification_event": RequisicaoEvent.CANCELADA,
     },
     "enviar_para_autorizacao": {
         "from_status": (StatusRequisicao.RASCUNHO,),
@@ -124,7 +117,7 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
         "timeline_event_type": TipoEvento.ENVIO_AUTORIZACAO,
         "audit_fields_to_set": ("numero_publico", "data_envio_autorizacao", "status"),
         "side_effects": (),
-        "notification_event": REQUISICAO_ENVIADA_AUTORIZACAO,
+        "notification_event": RequisicaoEvent.ENVIADA,
     },
     "reenviar_para_autorizacao": {
         "from_status": (StatusRequisicao.RASCUNHO,),
@@ -132,7 +125,7 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
         "timeline_event_type": TipoEvento.REENVIO_AUTORIZACAO,
         "audit_fields_to_set": ("status",),
         "side_effects": (),
-        "notification_event": REQUISICAO_ENVIADA_AUTORIZACAO,
+        "notification_event": RequisicaoEvent.ENVIADA,
     },
     "retornar_para_rascunho": {
         "from_status": (StatusRequisicao.AGUARDANDO_AUTORIZACAO,),
@@ -145,13 +138,13 @@ TRANSICOES_REQUISICAO: dict[str, dict[str, object]] = {
 }
 
 
-def _publish_notification(event_name: str, requisicao: Requisicao) -> None:
+def _publish_notification(event: RequisicaoEvent, requisicao: Requisicao, actor) -> None:
     if not transaction.get_connection().in_atomic_block:
         raise DomainConflict(
             "Publicação de notificação de requisição exige transação ativa.",
-            details={"requisicao_id": requisicao.pk, "event_name": event_name},
+            details={"requisicao_id": requisicao.pk, "event": event},
         )
-    publish_on_commit(event_name, {"requisicao_id": requisicao.pk})
+    publish_on_commit(event, {"requisicao_id": requisicao.pk, "actor_id": actor.pk})
 
 
 def apply_transition(
@@ -198,6 +191,6 @@ def apply_transition(
 
     notification_event = config.get("notification_event")
     if notification_event:
-        _publish_notification(notification_event, requisicao)
+        _publish_notification(notification_event, requisicao, actor)
 
     return requisicao
