@@ -180,7 +180,7 @@ docs: update pilot data modeling notes
 
 ## Execução de testes
 
-- **Sempre use o sistema RTK com tee para capturar a saída dos testes** para análise de falhas: `<rtk-command> 2>&1 | tee /tmp/test-output.log`; depois leia o log. **Nunca redirecione para `tail` nem dependa de saída truncada.**
+- **Sempre execute a suíte backend com `rtk make test` limpo, sem redirecionamentos, pipes, `tail`, `head`, `grep` ou truncamento de saída.** Quando houver falha, use o caminho `[full output: ...]` emitido pelo Tee System para inspecionar a saída bruta completa sem reexecutar o comando.
 - Rode a suíte completa de testes após qualquer refactor e confirme a contagem de testes passados antes de commitar.
 - Ao depurar falhas de teste, capture o traceback completo antes de tentar corrigir.
 - Para testes Django: `rtk make test` (usa `DJANGO_SETTINGS_MODULE=config.settings.test` com opções seguras do pytest).
