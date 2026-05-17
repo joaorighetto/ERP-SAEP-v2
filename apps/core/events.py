@@ -20,16 +20,59 @@ EventPayload = dict[str, Any]
 EventHandler = Callable[[EventPayload], None]
 
 _subscribers: dict[str, list[EventHandler]] = defaultdict(list)
+_enum_registrations: set[tuple[str, int]] = set()
 
 
-def subscribe(event_name: str, handler: EventHandler) -> None:
+def _subscribe_single(event_name: str, handler: EventHandler) -> None:
     handlers = _subscribers[event_name]
     if handler not in handlers:
         handlers.append(handler)
 
 
+def _register(event_name_or_enum, handler) -> None:
+    from enum import Enum
+
+    if isinstance(event_name_or_enum, type) and issubclass(event_name_or_enum, Enum):
+        for event in event_name_or_enum:
+            key = (str(event), id(handler))
+            if key in _enum_registrations:
+                continue
+            _enum_registrations.add(key)
+            _event = event
+
+            def _wrapper(payload, e=_event, f=handler):
+                f(e, **payload)
+
+            _subscribe_single(str(_event), _wrapper)
+    else:
+        _subscribe_single(str(event_name_or_enum), handler)
+
+
+def subscribe(event_name_or_enum, handler: EventHandler | None = None):
+    """Register handler for an event.
+
+    Two forms:
+      subscribe("event.name", handler_fn)         — direct, single event
+      subscribe(SomeStrEnumClass, handler_fn)      — direct, all enum values
+      @subscribe(SomeStrEnumClass)                 — decorator, all enum values
+    When an Enum class is used, handler is called as handler(event, **payload).
+    """
+    if handler is not None:
+        _register(event_name_or_enum, handler)
+        return
+
+    target = event_name_or_enum
+
+    def decorator(fn):
+        _register(target, fn)
+        return fn
+
+    return decorator
+
+
 def clear_subscribers() -> None:
     _subscribers.clear()
+    _enum_registrations.clear()
 
 
 def publish(event_name: str, payload: EventPayload) -> None:

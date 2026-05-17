@@ -1,4 +1,5 @@
 import json
+import logging
 from collections.abc import Iterable
 from datetime import timedelta
 
@@ -21,8 +22,11 @@ from apps.notifications.models import (
     TipoNotificacao,
 )
 from apps.notifications.policies import pode_gerenciar_push_subscription
+from apps.requisitions.events import RequisicaoEvent
 from apps.requisitions.models import Requisicao, StatusRequisicao
 from apps.users.models import PapelChoices, User
+
+logger = logging.getLogger(__name__)
 
 PUSH_REMINDER_COOLDOWN = timedelta(hours=4)
 PUSH_REMINDER_OVERDUE_AFTER = timedelta(hours=4)
@@ -401,3 +405,118 @@ def enviar_push_lembretes_autorizacoes_atrasadas(*, now=None) -> int:
             )
 
     return sent_to_users
+
+
+def _req_identificador(requisicao: Requisicao) -> str:
+    return requisicao.numero_publico or f"#{requisicao.pk}"
+
+
+def _carregar_requisicao_para_notificacao(requisicao_id: int) -> Requisicao:
+    return Requisicao.objects.select_related(
+        "criador",
+        "beneficiario",
+        "setor_beneficiario__chefe_responsavel",
+    ).get(pk=requisicao_id)
+
+
+def _notif_enviada(requisicao: Requisicao) -> None:
+    chefe = requisicao.setor_beneficiario.chefe_responsavel
+    if chefe is None:
+        logger.warning(
+            "Requisição %s enviada sem chefe_responsavel; notificação ignorada.",
+            requisicao.pk,
+        )
+        return
+    criar_notificacoes_usuarios_unicos(
+        destinatarios=[chefe],
+        tipo=TipoNotificacao.REQUISICAO_ENVIADA_AUTORIZACAO,
+        titulo="Requisição aguardando autorização",
+        mensagem=f"A requisição {_req_identificador(requisicao)} aguarda autorização.",
+        objeto_relacionado=requisicao,
+    )
+    enviar_push_requisicao_aguardando_autorizacao(requisicao=requisicao)
+
+
+def _notif_autorizada(requisicao: Requisicao) -> None:
+    criar_notificacoes_usuarios_unicos(
+        destinatarios=[requisicao.criador, requisicao.beneficiario],
+        tipo=TipoNotificacao.REQUISICAO_AUTORIZADA,
+        titulo="Requisição autorizada",
+        mensagem=f"A requisição {_req_identificador(requisicao)} foi autorizada.",
+        objeto_relacionado=requisicao,
+    )
+    for papel in (PapelChoices.AUXILIAR_ALMOXARIFADO, PapelChoices.CHEFE_ALMOXARIFADO):
+        criar_notificacao_papel(
+            papel_destinatario=papel,
+            tipo=TipoNotificacao.REQUISICAO_AUTORIZADA,
+            titulo="Requisição autorizada para atendimento",
+            mensagem=f"A requisição {_req_identificador(requisicao)} está pronta para atendimento.",
+            objeto_relacionado=requisicao,
+        )
+
+
+def _notif_recusada(requisicao: Requisicao) -> None:
+    criar_notificacoes_usuarios_unicos(
+        destinatarios=[requisicao.criador, requisicao.beneficiario],
+        tipo=TipoNotificacao.REQUISICAO_RECUSADA,
+        titulo="Requisição recusada",
+        mensagem=f"A requisição {_req_identificador(requisicao)} foi recusada.",
+        objeto_relacionado=requisicao,
+    )
+
+
+def _notif_atendida(requisicao: Requisicao) -> None:
+    criar_notificacoes_usuarios_unicos(
+        destinatarios=[requisicao.criador, requisicao.beneficiario],
+        tipo=TipoNotificacao.REQUISICAO_PRONTA_PARA_RETIRADA,
+        titulo="Requisição pronta para retirada",
+        mensagem=f"A requisição {_req_identificador(requisicao)} está pronta para retirada no almoxarifado.",
+        objeto_relacionado=requisicao,
+    )
+
+
+def _notif_atendida_parcialmente(requisicao: Requisicao) -> None:
+    criar_notificacoes_usuarios_unicos(
+        destinatarios=[requisicao.criador, requisicao.beneficiario],
+        tipo=TipoNotificacao.REQUISICAO_PRONTA_PARA_RETIRADA,
+        titulo="Requisição parcialmente atendida",
+        mensagem=f"A requisição {_req_identificador(requisicao)} foi parcialmente atendida e está pronta para retirada.",
+        objeto_relacionado=requisicao,
+    )
+
+
+def _notif_cancelada(requisicao: Requisicao) -> None:
+    criar_notificacoes_usuarios_unicos(
+        destinatarios=[requisicao.criador, requisicao.beneficiario],
+        tipo=TipoNotificacao.REQUISICAO_CANCELADA,
+        titulo="Requisição cancelada",
+        mensagem=f"A requisição {_req_identificador(requisicao)} foi cancelada.",
+        objeto_relacionado=requisicao,
+    )
+
+
+_NOTIF_ROUTING = {
+    RequisicaoEvent.ENVIADA: _notif_enviada,
+    RequisicaoEvent.AUTORIZADA: _notif_autorizada,
+    RequisicaoEvent.RECUSADA: _notif_recusada,
+    RequisicaoEvent.ATENDIDA: _notif_atendida,
+    RequisicaoEvent.ATENDIDA_PARCIALMENTE: _notif_atendida_parcialmente,
+    RequisicaoEvent.CANCELADA: _notif_cancelada,
+}
+
+
+def notificar(event: RequisicaoEvent, requisicao_id: int, actor_id: int) -> None:  # noqa: ARG001  # actor_id reserved: future audit/template use
+    handler = _NOTIF_ROUTING.get(event)
+    if handler is None:
+        logger.warning("notificar: evento sem handler na routing table: %s", event)
+        return
+    try:
+        requisicao = _carregar_requisicao_para_notificacao(requisicao_id)
+        handler(requisicao)
+    except Exception:
+        logger.exception(
+            "notificar: falha ao processar evento=%s requisicao_id=%s actor_id=%s",
+            event,
+            requisicao_id,
+            actor_id,
+        )
