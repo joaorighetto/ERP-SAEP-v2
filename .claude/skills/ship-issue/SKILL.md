@@ -10,7 +10,18 @@ Ship a GitHub issue end-to-end: branch → plan → implement → test → PR �
 
 ## Workflow
 
-### 1. Read the issue
+### High-level summary
+
+Break the issue workflow into three independent sub-workflows:
+1. Discover: understand the issue and plan the change.
+2. Implement: make the code change using Serena MCP and validate with tests.
+3. Deliver: commit, open PR, handle CodeRabbit review.
+
+Each sub-workflow has a clear entry and exit point so you can verify progress before moving on.
+
+### Sub-workflow 1: Discover
+
+#### 1. Read the issue
 
 ```bash
 gh issue view <number> --json title,body,labels,assignees,milestone
