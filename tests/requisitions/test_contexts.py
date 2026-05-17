@@ -139,11 +139,13 @@ class TestContextoEnvio:
         with ContextoEnvio.abrir(req, criador) as ctx:
             assert ctx.is_primeiro_envio is False
 
-    def test_rejeita_ator_sem_permissao(self, db, criador, setor_solicitante, almoxarife, material):
+    def test_rejeita_ator_fora_de_escopo_como_404(
+        self, db, criador, setor_solicitante, almoxarife, material
+    ):
         req = _criar_requisicao(criador, setor_solicitante, StatusRequisicao.RASCUNHO)
         _adicionar_item(req, material, Decimal("1"))
 
-        with pytest.raises(PermissionDenied):
+        with pytest.raises(NotFound):
             with ContextoEnvio.abrir(req, almoxarife):
                 pass
 
@@ -214,25 +216,18 @@ class TestContextoCancelamento:
         with ContextoCancelamento.abrir(req, criador) as ctx:
             assert ctx.requer_liberacao_estoque is True
 
-    def test_rejeita_usuario_sem_permissao_para_rascunho(
+    def test_rejeita_ator_fora_de_escopo_rascunho_como_404(
         self, db, criador, setor_solicitante, almoxarife
     ):
         req = _criar_requisicao(criador, setor_solicitante, StatusRequisicao.RASCUNHO)
 
-        with pytest.raises(PermissionDenied):
+        with pytest.raises(NotFound):
             with ContextoCancelamento.abrir(req, almoxarife):
                 pass
 
-    def test_rejeita_solicitante_para_autorizada(
+    def test_rejeita_chefe_setor_visivel_mas_sem_permissao_cancelamento_autorizada_como_403(
         self, db, criador, chefe_setor, setor_solicitante, material
     ):
-        outro = User.objects.create(
-            matricula_funcional="S999",
-            nome_completo="Outro",
-            papel=PapelChoices.SOLICITANTE,
-            setor=setor_solicitante,
-            is_active=True,
-        )
         req = _criar_requisicao(
             criador,
             setor_solicitante,
@@ -245,7 +240,7 @@ class TestContextoCancelamento:
         _adicionar_item(req, material, Decimal("5"), qtd_aut=Decimal("5"))
 
         with pytest.raises(PermissionDenied):
-            with ContextoCancelamento.abrir(req, outro):
+            with ContextoCancelamento.abrir(req, chefe_setor):
                 pass
 
 

@@ -14,6 +14,7 @@ from apps.requisitions.policies import (
     pode_autorizar_requisicao,
     pode_cancelar_requisicao,
     pode_manipular_pre_autorizacao,
+    pode_visualizar_requisicao,
 )
 
 User = get_user_model()
@@ -42,6 +43,8 @@ class ContextoEnvio:
     def abrir(cls, requisicao: Requisicao, ator: User) -> Generator[ContextoEnvio]:
         with transaction.atomic():
             req = _recarregar_com_lock(requisicao.pk)
+            if not pode_visualizar_requisicao(ator, req):
+                raise NotFound("Requisição não encontrada.")
             if not pode_manipular_pre_autorizacao(ator, req):
                 raise PermissionDenied("Apenas criador pode enviar a requisição.")
             yield cls(
@@ -61,6 +64,8 @@ class ContextoAutorizacao:
     def abrir(cls, requisicao: Requisicao, ator: User) -> Generator[ContextoAutorizacao]:
         with transaction.atomic():
             req = _recarregar_com_lock(requisicao.pk)
+            if not pode_visualizar_requisicao(ator, req):
+                raise NotFound("Requisição não encontrada.")
             if not pode_autorizar_requisicao(ator, req):
                 raise PermissionDenied("Usuário sem permissão para autorizar esta requisição.")
             yield cls(requisicao=req, ator=ator)
@@ -77,6 +82,8 @@ class ContextoCancelamento:
     def abrir(cls, requisicao: Requisicao, ator: User) -> Generator[ContextoCancelamento]:
         with transaction.atomic():
             req = _recarregar_com_lock(requisicao.pk)
+            if not pode_visualizar_requisicao(ator, req):
+                raise NotFound("Requisição não encontrada.")
             if not pode_cancelar_requisicao(ator, req):
                 raise PermissionDenied("Usuário sem permissão para cancelar esta requisição.")
             yield cls(
@@ -96,6 +103,8 @@ class ContextoAtendimento:
     def abrir(cls, requisicao: Requisicao, ator: User) -> Generator[ContextoAtendimento]:
         with transaction.atomic():
             req = _recarregar_com_lock(requisicao.pk)
+            if not pode_visualizar_requisicao(ator, req):
+                raise NotFound("Requisição não encontrada.")
             if not pode_atender_requisicao(ator, req):
                 raise PermissionDenied("Usuário sem permissão para atender esta requisição.")
             yield cls(requisicao=req, ator=ator)

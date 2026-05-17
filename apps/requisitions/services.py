@@ -133,6 +133,8 @@ def retornar_para_rascunho(*, requisicao: Requisicao, ator: User) -> Requisicao:
             )
         except Requisicao.DoesNotExist as exc:
             raise NotFound("Requisição não encontrada.") from exc
+        if not pode_visualizar_requisicao(ator, requisicao):
+            raise NotFound("Requisição não encontrada.")
         if not pode_manipular_pre_autorizacao(ator, requisicao):
             raise PermissionDenied("Apenas criador ou beneficiário podem retornar a requisição.")
         apply_transition(

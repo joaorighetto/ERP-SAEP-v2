@@ -2073,7 +2073,7 @@ class TestMaquinaEstadosRequisicao:
             criador=solicitante,
             beneficiario=solicitante,
             setor_beneficiario=setor,
-            status=StatusRequisicao.RASCUNHO,
+            status=StatusRequisicao.CANCELADA,
         )
         item = requisicao.itens.create(
             material=material,
