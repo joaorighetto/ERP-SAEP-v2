@@ -8,7 +8,11 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.core.api.exceptions import DomainConflict
 from apps.materials.models import GrupoMaterial, Material, SubgrupoMaterial
-from apps.requisitions.domain.types import ItemAtendimentoData, ItemAutorizacaoData
+from apps.requisitions.domain.types import (
+    ItemAtendimentoData,
+    ItemAutorizacaoData,
+    ItemRascunhoData,
+)
 from apps.requisitions.models import (
     ItemRequisicao,
     Requisicao,
@@ -21,8 +25,11 @@ from apps.requisitions.services import (
     atender_requisicao,
     atender_requisicao_com_itens,
     atender_requisicao_completa,
+    atualizar_rascunho_requisicao,
     autorizar_requisicao,
     cancelar_requisicao,
+    criar_rascunho_requisicao,
+    descartar_rascunho_nunca_enviado,
     enviar_para_autorizacao,
     recusar_requisicao,
     retirar_requisicao,
@@ -2445,3 +2452,331 @@ class TestPortAdapterStock:
         assert req.data_retirada is None
         assert req.retirante_fisico == ""
         assert EventoTimeline.objects.filter(requisicao=req).count() == timeline_antes
+
+
+@pytest.mark.django_db(transaction=True)
+class TestRascunhoCRUDEAtendimentoService:
+    """Cobertura de service para criar/atualizar/descartar rascunho e atendimento.
+
+    ADR 0007: toda regra de domínio deve ter cobertura em test_services antes de test_api.
+    Issue #83.
+    """
+
+    # -------------------------------------------------------------------------
+    # Helpers
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def _criar_setor(nome: str, chefe_matricula: str) -> Setor:
+        chefe = User.objects.create(
+            matricula_funcional=chefe_matricula,
+            nome_completo=f"Chefe {nome}",
+            papel=PapelChoices.CHEFE_SETOR,
+            is_active=True,
+        )
+        setor = Setor.objects.create(nome=nome, chefe_responsavel=chefe)
+        chefe.setor = setor
+        chefe.save(update_fields=["setor"])
+        return setor
+
+    @staticmethod
+    def _criar_usuario(
+        matricula: str,
+        nome: str,
+        *,
+        papel=PapelChoices.SOLICITANTE,
+        setor: Setor | None = None,
+        is_superuser: bool = False,
+    ) -> User:
+        return User.objects.create(
+            matricula_funcional=matricula,
+            nome_completo=nome,
+            papel=papel,
+            setor=setor,
+            is_active=True,
+            is_superuser=is_superuser,
+        )
+
+    @staticmethod
+    def _criar_material(
+        codigo: str,
+        *,
+        saldo_fisico: Decimal = Decimal("10"),
+        is_active: bool = True,
+    ) -> Material:
+        from apps.materials.models import GrupoMaterial, SubgrupoMaterial
+
+        grupo_codigo, subgrupo_codigo, sequencial = codigo.split(".")
+        grupo, _ = GrupoMaterial.objects.get_or_create(
+            codigo_grupo=grupo_codigo, defaults={"nome": f"Grupo {grupo_codigo}"}
+        )
+        subgrupo, _ = SubgrupoMaterial.objects.get_or_create(
+            grupo=grupo,
+            codigo_subgrupo=subgrupo_codigo,
+            defaults={"nome": f"Subgrupo {subgrupo_codigo}"},
+        )
+        material = Material.objects.create(
+            subgrupo=subgrupo,
+            codigo_completo=codigo,
+            sequencial=sequencial,
+            nome=f"Material {codigo}",
+            unidade_medida="UN",
+            is_active=is_active,
+        )
+        EstoqueMaterial.objects.create(
+            material=material,
+            saldo_fisico=saldo_fisico,
+            saldo_reservado=Decimal("0"),
+        )
+        return material
+
+    # -------------------------------------------------------------------------
+    # criar_rascunho_requisicao
+    # -------------------------------------------------------------------------
+
+    def test_criar_rascunho_happy_path(self):
+        setor = self._criar_setor("Criar01", "CR001")
+        solicitante = self._criar_usuario("CR002", "Solicitante Criar01", setor=setor)
+        material = self._criar_material("099.001.001")
+
+        resultado = criar_rascunho_requisicao(
+            criador=solicitante,
+            beneficiario=solicitante,
+            observacao="obs",
+            itens=[ItemRascunhoData(material_id=material.pk, quantidade_solicitada=Decimal("3"))],
+        )
+
+        assert resultado.status == StatusRequisicao.RASCUNHO
+        assert resultado.criador == solicitante
+        assert resultado.itens.filter(material=material).exists()
+
+    def test_criar_rascunho_material_inativo(self):
+        setor = self._criar_setor("Criar02", "CR010")
+        solicitante = self._criar_usuario("CR011", "Solicitante Criar02", setor=setor)
+        material = self._criar_material("099.001.002", is_active=False)
+
+        with pytest.raises(DomainConflict):
+            criar_rascunho_requisicao(
+                criador=solicitante,
+                beneficiario=solicitante,
+                observacao="",
+                itens=[
+                    ItemRascunhoData(material_id=material.pk, quantidade_solicitada=Decimal("1"))
+                ],
+            )
+
+    def test_criar_rascunho_quantidade_acima_saldo(self):
+        setor = self._criar_setor("Criar03", "CR020")
+        solicitante = self._criar_usuario("CR021", "Solicitante Criar03", setor=setor)
+        material = self._criar_material("099.001.003", saldo_fisico=Decimal("2"))
+
+        with pytest.raises(DomainConflict):
+            criar_rascunho_requisicao(
+                criador=solicitante,
+                beneficiario=solicitante,
+                observacao="",
+                itens=[
+                    ItemRascunhoData(material_id=material.pk, quantidade_solicitada=Decimal("5"))
+                ],
+            )
+
+    def test_criar_rascunho_sem_itens(self):
+        setor = self._criar_setor("Criar04", "CR030")
+        solicitante = self._criar_usuario("CR031", "Solicitante Criar04", setor=setor)
+
+        with pytest.raises(ValidationError) as excinfo:
+            criar_rascunho_requisicao(
+                criador=solicitante,
+                beneficiario=solicitante,
+                observacao="",
+                itens=[],
+            )
+        assert "itens" in excinfo.value.detail
+
+    # -------------------------------------------------------------------------
+    # atualizar_rascunho_requisicao
+    # -------------------------------------------------------------------------
+
+    def test_atualizar_rascunho_happy_path(self):
+        setor = self._criar_setor("Atualizar01", "AT001")
+        # AUXILIAR_ALMOXARIFADO pode criar/editar para qualquer beneficiário
+        criador = self._criar_usuario(
+            "AT002", "Almoxarife Atualizar01", papel=PapelChoices.AUXILIAR_ALMOXARIFADO, setor=setor
+        )
+        beneficiario_novo = self._criar_usuario("AT003", "Beneficiario Novo", setor=setor)
+        material = self._criar_material("099.001.004")
+        material_antigo = self._criar_material("099.001.014")
+        requisicao = Requisicao.objects.create(
+            criador=criador,
+            beneficiario=criador,
+            setor_beneficiario=setor,
+            status=StatusRequisicao.RASCUNHO,
+        )
+        item_antigo = requisicao.itens.create(
+            material=material_antigo,
+            unidade_medida=material_antigo.unidade_medida,
+            quantidade_solicitada=Decimal("1"),
+        )
+
+        resultado = atualizar_rascunho_requisicao(
+            requisicao_id=requisicao.pk,
+            ator=criador,
+            beneficiario_id=beneficiario_novo.pk,
+            observacao="nova obs",
+            itens=[ItemRascunhoData(material_id=material.pk, quantidade_solicitada=Decimal("2"))],
+        )
+
+        assert resultado.beneficiario_id == beneficiario_novo.pk
+        assert resultado.itens.filter(material=material).exists()
+        assert not resultado.itens.filter(pk=item_antigo.pk).exists()
+        assert resultado.itens.count() == 1
+
+    def test_atualizar_rascunho_status_invalido(self):
+        setor = self._criar_setor("Atualizar02", "AT010")
+        solicitante = self._criar_usuario("AT011", "Solicitante Atualizar02", setor=setor)
+        material = self._criar_material("099.001.005")
+        requisicao = Requisicao.objects.create(
+            criador=solicitante,
+            beneficiario=solicitante,
+            setor_beneficiario=setor,
+            status=StatusRequisicao.AGUARDANDO_AUTORIZACAO,
+            numero_publico="REQ-2026-990001",
+            data_envio_autorizacao="2026-01-01T10:00:00Z",
+        )
+
+        with pytest.raises(DomainConflict) as excinfo:
+            atualizar_rascunho_requisicao(
+                requisicao_id=requisicao.pk,
+                ator=solicitante,
+                beneficiario_id=solicitante.pk,
+                observacao="",
+                itens=[
+                    ItemRascunhoData(material_id=material.pk, quantidade_solicitada=Decimal("1"))
+                ],
+            )
+        assert "rascunho" in str(excinfo.value.detail).lower()
+
+    def test_atualizar_rascunho_ator_sem_permissao(self):
+        """Superuser passa pode_visualizar_requisicao mas falha em pode_manipular_pre_autorizacao."""
+        setor = self._criar_setor("Atualizar03", "AT020")
+        criador = self._criar_usuario("AT021", "Criador Atualizar03", setor=setor)
+        superuser = self._criar_usuario("AT022", "Super Atualizar03", is_superuser=True)
+        material = self._criar_material("099.001.006")
+        requisicao = Requisicao.objects.create(
+            criador=criador,
+            beneficiario=criador,
+            setor_beneficiario=setor,
+            status=StatusRequisicao.RASCUNHO,
+        )
+
+        with pytest.raises(PermissionDenied):
+            atualizar_rascunho_requisicao(
+                requisicao_id=requisicao.pk,
+                ator=superuser,
+                beneficiario_id=criador.pk,
+                observacao="",
+                itens=[
+                    ItemRascunhoData(material_id=material.pk, quantidade_solicitada=Decimal("1"))
+                ],
+            )
+
+    # -------------------------------------------------------------------------
+    # descartar_rascunho_nunca_enviado
+    # -------------------------------------------------------------------------
+
+    def test_descartar_rascunho_happy_path(self):
+        setor = self._criar_setor("Descartar01", "DS001")
+        solicitante = self._criar_usuario("DS002", "Solicitante Descartar01", setor=setor)
+        material = self._criar_material("099.001.007")
+        requisicao = Requisicao.objects.create(
+            criador=solicitante,
+            beneficiario=solicitante,
+            setor_beneficiario=setor,
+            status=StatusRequisicao.RASCUNHO,
+        )
+        item = requisicao.itens.create(
+            material=material,
+            unidade_medida=material.unidade_medida,
+            quantidade_solicitada=Decimal("1"),
+        )
+        requisicao_id = requisicao.pk
+        item_id = item.pk
+
+        descartar_rascunho_nunca_enviado(requisicao=requisicao, ator=solicitante)
+
+        assert not Requisicao.objects.filter(pk=requisicao_id).exists()
+        assert not ItemRequisicao.objects.filter(pk=item_id).exists()
+
+    def test_descartar_rascunho_ja_formalizado(self):
+        setor = self._criar_setor("Descartar02", "DS010")
+        solicitante = self._criar_usuario("DS011", "Solicitante Descartar02", setor=setor)
+        requisicao = Requisicao.objects.create(
+            criador=solicitante,
+            beneficiario=solicitante,
+            setor_beneficiario=setor,
+            status=StatusRequisicao.RASCUNHO,
+            numero_publico="REQ-2026-990002",
+            data_envio_autorizacao="2026-01-02T10:00:00Z",
+        )
+
+        with pytest.raises(DomainConflict) as excinfo:
+            descartar_rascunho_nunca_enviado(requisicao=requisicao, ator=solicitante)
+        assert "formalizado" in str(excinfo.value.detail).lower()
+
+    def test_descartar_rascunho_ator_sem_permissao(self):
+        setor = self._criar_setor("Descartar03", "DS020")
+        criador = self._criar_usuario("DS021", "Criador Descartar03", setor=setor)
+        outro = self._criar_usuario("DS022", "Outro Descartar03", setor=setor)
+        requisicao = Requisicao.objects.create(
+            criador=criador,
+            beneficiario=criador,
+            setor_beneficiario=setor,
+            status=StatusRequisicao.RASCUNHO,
+        )
+
+        with pytest.raises(PermissionDenied):
+            descartar_rascunho_nunca_enviado(requisicao=requisicao, ator=outro)
+
+    # -------------------------------------------------------------------------
+    # atender_requisicao — entrega acima do autorizado
+    # -------------------------------------------------------------------------
+
+    def test_atender_entrega_acima_do_autorizado(self):
+        setor = self._criar_setor("Atender01", "ATE001")
+        solicitante = self._criar_usuario("ATE002", "Solicitante Atender01", setor=setor)
+        almoxarife = self._criar_usuario(
+            "ATE003",
+            "Almoxarife Atender01",
+            papel=PapelChoices.AUXILIAR_ALMOXARIFADO,
+            setor=setor,
+        )
+        material = self._criar_material("099.001.008", saldo_fisico=Decimal("10"))
+        requisicao = Requisicao.objects.create(
+            criador=solicitante,
+            beneficiario=solicitante,
+            setor_beneficiario=setor,
+            status=StatusRequisicao.AUTORIZADA,
+            numero_publico="REQ-2026-990003",
+            data_envio_autorizacao="2026-01-03T10:00:00Z",
+            data_autorizacao_ou_recusa="2026-01-03T11:00:00Z",
+        )
+        item = requisicao.itens.create(
+            material=material,
+            unidade_medida=material.unidade_medida,
+            quantidade_solicitada=Decimal("3"),
+            quantidade_autorizada=Decimal("3"),
+        )
+
+        with pytest.raises(DomainConflict) as excinfo:
+            atender_requisicao_com_itens(
+                requisicao=requisicao,
+                ator=almoxarife,
+                itens=[
+                    ItemAtendimentoData(
+                        item_id=item.pk,
+                        quantidade_entregue=Decimal("5"),
+                        justificativa_atendimento_parcial="",
+                    )
+                ],
+            )
+        assert "autorizada" in str(excinfo.value.detail).lower()
