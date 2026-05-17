@@ -10,7 +10,9 @@ Update all imports. Zero logic changes.
 - `apps/requisitions/queries.py` → renamed to `apps/requisitions/data.py`
 - `apps/requisitions/services.py` — update import line 6: `queries` → `data`
 
-No other files reference `queries` module directly.
+No other files reference `queries` module directly. Verified with:
+  `rg -n --glob '!.venv' --glob '!.git' 'apps/requisitions\.queries|from .* import queries' --include="*.py"`
+  → zero matches outside migrations/.
 
 ## Test strategy
 
