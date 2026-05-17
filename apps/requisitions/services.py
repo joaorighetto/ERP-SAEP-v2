@@ -124,12 +124,15 @@ def enviar_para_autorizacao(*, requisicao: Requisicao, ator: User) -> Requisicao
 
 def retornar_para_rascunho(*, requisicao: Requisicao, ator: User) -> Requisicao:
     with transaction.atomic():
-        requisicao = (
-            Requisicao.objects.select_for_update(of=("self",))
-            .select_related("criador", "beneficiario", "setor_beneficiario")
-            .prefetch_related("itens__material__estoque", "eventos__usuario")
-            .get(pk=requisicao.pk)
-        )
+        try:
+            requisicao = (
+                Requisicao.objects.select_for_update(of=("self",))
+                .select_related("criador", "beneficiario", "setor_beneficiario")
+                .prefetch_related("itens__material__estoque", "eventos__usuario")
+                .get(pk=requisicao.pk)
+            )
+        except Requisicao.DoesNotExist as exc:
+            raise NotFound("Requisição não encontrada.") from exc
         if not pode_manipular_pre_autorizacao(ator, requisicao):
             raise PermissionDenied("Apenas criador ou beneficiário podem retornar a requisição.")
         apply_transition(

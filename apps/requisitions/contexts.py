@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from apps.requisitions.models import Requisicao, StatusRequisicao
 from apps.requisitions.policies import (
@@ -20,12 +20,15 @@ User = get_user_model()
 
 
 def _recarregar_com_lock(pk: int) -> Requisicao:
-    return (
-        Requisicao.objects.select_for_update(of=("self",))
-        .select_related("criador", "beneficiario", "setor_beneficiario")
-        .prefetch_related("itens__material__estoque", "eventos__usuario")
-        .get(pk=pk)
-    )
+    try:
+        return (
+            Requisicao.objects.select_for_update(of=("self",))
+            .select_related("criador", "beneficiario", "setor_beneficiario")
+            .prefetch_related("itens__material__estoque", "eventos__usuario")
+            .get(pk=pk)
+        )
+    except Requisicao.DoesNotExist as exc:
+        raise NotFound("Requisição não encontrada.") from exc
 
 
 @dataclass

@@ -24,7 +24,7 @@
 | `apps/requisitions/services.py` | Refatora `enviar_para_autorizacao`, `autorizar_requisicao`, `recusar_requisicao`, `cancelar_requisicao`, `atender_requisicao_completa`, `atender_requisicao_com_itens`; inline loader em `retornar_para_rascunho` e `atualizar_rascunho_requisicao` |
 | `tests/requisitions/test_contexts.py` | Novo: testes de seam dos 4 contextos |
 
-## Contextos definidos (ADR 0004)
+## Contextos definidos (ADR 0004 + ADR 0005)
 
 | Classe | Loader | Policy | Extras |
 |---|---|---|---|
@@ -64,7 +64,7 @@ Testes de serviços existentes em `test_services.py` permanecem como regressão.
 - `_recarregar_com_lock` privado: callers externos não acessam objeto bloqueado sem contexto
 - `data.py` sem `select_for_update` exceto `carregar_itens_bloqueados`
 - Lógica de negócio permanece em `services.py`
-- `contexts.py` importa de `data.py` e `policies.py`; nunca de `services.py`
+- `contexts.py` importa de `models.py` e `policies.py`; nunca de `services.py` nem de `data.py`
 
 ## Risks
 

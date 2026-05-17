@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 import pytest
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from apps.materials.models import GrupoMaterial, Material, SubgrupoMaterial
 from apps.requisitions.contexts import (
@@ -145,6 +145,13 @@ class TestContextoEnvio:
 
         with pytest.raises(PermissionDenied):
             with ContextoEnvio.abrir(req, almoxarife):
+                pass
+
+    def test_rejeita_requisicao_inexistente(self, db, criador):
+        req_fake = Requisicao(pk=999999)
+
+        with pytest.raises(NotFound):
+            with ContextoEnvio.abrir(req_fake, criador):
                 pass
 
 
