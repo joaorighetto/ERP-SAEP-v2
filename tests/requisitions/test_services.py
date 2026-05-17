@@ -2605,11 +2605,17 @@ class TestRascunhoCRUDEAtendimentoService:
         )
         beneficiario_novo = self._criar_usuario("AT003", "Beneficiario Novo", setor=setor)
         material = self._criar_material("099.001.004")
+        material_antigo = self._criar_material("099.001.014")
         requisicao = Requisicao.objects.create(
             criador=criador,
             beneficiario=criador,
             setor_beneficiario=setor,
             status=StatusRequisicao.RASCUNHO,
+        )
+        item_antigo = requisicao.itens.create(
+            material=material_antigo,
+            unidade_medida=material_antigo.unidade_medida,
+            quantidade_solicitada=Decimal("1"),
         )
 
         resultado = atualizar_rascunho_requisicao(
@@ -2622,6 +2628,8 @@ class TestRascunhoCRUDEAtendimentoService:
 
         assert resultado.beneficiario_id == beneficiario_novo.pk
         assert resultado.itens.filter(material=material).exists()
+        assert not resultado.itens.filter(pk=item_antigo.pk).exists()
+        assert resultado.itens.count() == 1
 
     def test_atualizar_rascunho_status_invalido(self):
         setor = self._criar_setor("Atualizar02", "AT010")
@@ -2686,16 +2694,18 @@ class TestRascunhoCRUDEAtendimentoService:
             setor_beneficiario=setor,
             status=StatusRequisicao.RASCUNHO,
         )
-        requisicao.itens.create(
+        item = requisicao.itens.create(
             material=material,
             unidade_medida=material.unidade_medida,
             quantidade_solicitada=Decimal("1"),
         )
         requisicao_id = requisicao.pk
+        item_id = item.pk
 
         descartar_rascunho_nunca_enviado(requisicao=requisicao, ator=solicitante)
 
         assert not Requisicao.objects.filter(pk=requisicao_id).exists()
+        assert not ItemRequisicao.objects.filter(pk=item_id).exists()
 
     def test_descartar_rascunho_ja_formalizado(self):
         setor = self._criar_setor("Descartar02", "DS010")
