@@ -3,7 +3,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied
 
-from apps.requisitions import idempotency, queries
+from apps.requisitions import data, idempotency
 from apps.requisitions.domain import validation
 from apps.requisitions.domain.state_machine import apply_transition
 from apps.requisitions.domain.types import (
@@ -63,8 +63,8 @@ def criar_rascunho_requisicao(
         requisicao = Requisicao.objects.create(
             criador=criador, beneficiario=beneficiario, observacao=observacao
         )
-        queries.bulk_create_itens(requisicao, itens, materiais)
-    return queries.recarregar_rascunho(requisicao.pk)
+        data.bulk_create_itens(requisicao, itens, materiais)
+    return data.recarregar_rascunho(requisicao.pk)
 
 
 def atualizar_rascunho_requisicao(
@@ -76,28 +76,26 @@ def atualizar_rascunho_requisicao(
     itens: list[ItemRascunhoData],
 ) -> Requisicao:
     with transaction.atomic():
-        requisicao = queries.carregar_rascunho_bloqueado(requisicao_id)
+        requisicao = data.carregar_rascunho_bloqueado(requisicao_id)
         if not pode_visualizar_requisicao(ator, requisicao):
             raise NotFound("Requisição não encontrada.")
         if not pode_manipular_pre_autorizacao(ator, requisicao):
             raise PermissionDenied("Apenas criador pode editar a requisição.")
         validation.validar_status_rascunho_para_edicao(requisicao)
-        beneficiario, setor = queries.carregar_beneficiario_e_setor(beneficiario_id)
+        beneficiario, setor = data.carregar_beneficiario_e_setor(beneficiario_id)
         validation.validar_beneficiario_setor_ativo(beneficiario, setor)
         if not pode_criar_requisicao_para(ator, beneficiario):
             raise PermissionDenied(
                 "Usuário sem permissão para criar requisição para este beneficiário."
             )
         materiais = validation._validar_itens_rascunho(itens)
-        queries.aplicar_edicao_rascunho(
-            requisicao, beneficiario, setor, observacao, itens, materiais
-        )
-    return queries.recarregar_rascunho(requisicao_id)
+        data.aplicar_edicao_rascunho(requisicao, beneficiario, setor, observacao, itens, materiais)
+    return data.recarregar_rascunho(requisicao_id)
 
 
 def enviar_para_autorizacao(*, requisicao: Requisicao, ator: User) -> Requisicao:
     with transaction.atomic():
-        requisicao = queries.recarregar_para_autorizacao(requisicao)
+        requisicao = data.recarregar_para_autorizacao(requisicao)
         if not pode_manipular_pre_autorizacao(ator, requisicao):
             raise PermissionDenied("Apenas criador pode enviar a requisição.")
         validation.validar_envio_para_autorizacao(list(requisicao.itens.all()))
@@ -114,18 +112,18 @@ def enviar_para_autorizacao(*, requisicao: Requisicao, ator: User) -> Requisicao
         apply_transition(
             requisicao=requisicao, transition_name=transicao, actor=ator, payload=payload
         )
-    return queries.recarregar_rascunho(requisicao.pk)
+    return data.recarregar_rascunho(requisicao.pk)
 
 
 def retornar_para_rascunho(*, requisicao: Requisicao, ator: User) -> Requisicao:
     with transaction.atomic():
-        requisicao = queries.recarregar_para_atendimento(requisicao)
+        requisicao = data.recarregar_para_atendimento(requisicao)
         if not pode_manipular_pre_autorizacao(ator, requisicao):
             raise PermissionDenied("Apenas criador ou beneficiário podem retornar a requisição.")
         apply_transition(
             requisicao=requisicao, transition_name="retornar_para_rascunho", actor=ator, payload={}
         )
-    return queries.recarregar_rascunho(requisicao.pk)
+    return data.recarregar_rascunho(requisicao.pk)
 
 
 def descartar_rascunho_nunca_enviado(*, requisicao: Requisicao, ator: User) -> None:
@@ -162,7 +160,7 @@ def _cancelar_autorizada_sem_saldo(
     )
     if not pode_cancelar_autorizada(ator, requisicao):
         raise PermissionDenied("Usuário sem permissão para cancelar esta requisição.")
-    itens_requisicao = queries.carregar_itens_bloqueados(requisicao)
+    itens_requisicao = data.carregar_itens_bloqueados(requisicao)
     itens_autorizados = [i for i in itens_requisicao if i.quantidade_autorizada > 0]
     validation.validar_itens_autorizados_existem(itens_autorizados, requisicao)
     apply_transition(
@@ -189,7 +187,7 @@ def cancelar_requisicao(
     if stock is None:
         stock = _get_default_stock()
     with transaction.atomic():
-        requisicao = queries.recarregar_para_atendimento(requisicao)
+        requisicao = data.recarregar_para_atendimento(requisicao)
         if requisicao.status == StatusRequisicao.AUTORIZADA:
             requisicao = _cancelar_autorizada_sem_saldo(
                 requisicao=requisicao,
@@ -199,7 +197,7 @@ def cancelar_requisicao(
             )
         else:
             requisicao = _cancelar_pre_autorizacao(requisicao=requisicao, ator=ator)
-    return queries.recarregar_atendido(requisicao.pk)
+    return data.recarregar_atendido(requisicao.pk)
 
 
 def autorizar_requisicao(
@@ -212,14 +210,14 @@ def autorizar_requisicao(
     if stock is None:
         stock = _get_default_stock()
     with transaction.atomic():
-        requisicao = queries.recarregar_para_autorizacao(requisicao)
+        requisicao = data.recarregar_para_autorizacao(requisicao)
         if not pode_autorizar_requisicao(ator, requisicao):
             raise PermissionDenied("Usuário sem permissão para autorizar esta requisição.")
-        itens_requisicao = queries.carregar_itens_bloqueados(requisicao)
+        itens_requisicao = data.carregar_itens_bloqueados(requisicao)
         itens_por_id = validation._validar_itens_autorizacao(
             itens_requisicao=itens_requisicao, itens=itens
         )
-        queries.aplicar_quantidades_autorizacao(itens_requisicao, itens_por_id)
+        data.aplicar_quantidades_autorizacao(itens_requisicao, itens_por_id)
         transicao = "autorizar_total"
         if any(i.quantidade_autorizada < i.quantidade_solicitada for i in itens_requisicao):
             transicao = "autorizar_parcial"
@@ -232,7 +230,7 @@ def autorizar_requisicao(
         itens_autorizados = [i for i in itens_requisicao if i.quantidade_autorizada > 0]
         if itens_autorizados:
             stock.aplicar_reservas_autorizacao(requisicao, itens_autorizados)
-    return queries.recarregar_autorizado(requisicao.pk)
+    return data.recarregar_autorizado(requisicao.pk)
 
 
 def recusar_requisicao(*, requisicao: Requisicao, ator: User, motivo_recusa: str) -> Requisicao:
@@ -240,7 +238,7 @@ def recusar_requisicao(*, requisicao: Requisicao, ator: User, motivo_recusa: str
         motivo_recusa, "motivo_recusa", "Motivo da recusa é obrigatório."
     )
     with transaction.atomic():
-        requisicao = queries.recarregar_para_autorizacao(requisicao)
+        requisicao = data.recarregar_para_autorizacao(requisicao)
         if not pode_autorizar_requisicao(ator, requisicao):
             raise PermissionDenied("Usuário sem permissão para recusar esta requisição.")
         apply_transition(
@@ -253,7 +251,7 @@ def recusar_requisicao(*, requisicao: Requisicao, ator: User, motivo_recusa: str
                 "data_autorizacao_ou_recusa": timezone.now(),
             },
         )
-    return queries.recarregar_autorizado(requisicao.pk)
+    return data.recarregar_autorizado(requisicao.pk)
 
 
 def listar_fila_autorizacao(*, ator: User):
@@ -332,7 +330,7 @@ def atender_requisicao_idempotente(
             idempotency_key,
             IDEMPOTENCY_ENDPOINT_FULFILL,
             "Atendimento com esta chave de idempotência ainda está em processamento.",
-            lambda: queries.recarregar_detalhe(requisicao.id),
+            lambda: data.recarregar_detalhe(requisicao.id),
         )
         if cached is not None:
             return cached
@@ -354,13 +352,13 @@ def atender_requisicao_completa(
     observacao_atendimento: str = "",
 ) -> Requisicao:
     with transaction.atomic():
-        requisicao = queries.recarregar_para_atendimento(requisicao)
+        requisicao = data.recarregar_para_atendimento(requisicao)
         if not pode_atender_requisicao(ator, requisicao):
             raise PermissionDenied("Usuário sem permissão para atender esta requisição.")
-        itens_requisicao = queries.carregar_itens_bloqueados(requisicao)
+        itens_requisicao = data.carregar_itens_bloqueados(requisicao)
         itens_autorizados = [i for i in itens_requisicao if i.quantidade_autorizada > 0]
         validation.validar_itens_autorizados_existem(itens_autorizados, requisicao)
-        queries.aplicar_itens_atendimento_completo(itens_autorizados)
+        data.aplicar_itens_atendimento_completo(itens_autorizados)
         apply_transition(
             requisicao=requisicao,
             transition_name="atender_total",
@@ -371,7 +369,7 @@ def atender_requisicao_completa(
                 "observacao_atendimento": observacao_atendimento.strip(),
             },
         )
-    return queries.recarregar_atendido(requisicao.pk)
+    return data.recarregar_atendido(requisicao.pk)
 
 
 def atender_requisicao_com_itens(
@@ -382,16 +380,16 @@ def atender_requisicao_com_itens(
     observacao_atendimento: str = "",
 ) -> Requisicao:
     with transaction.atomic():
-        requisicao = queries.recarregar_para_atendimento(requisicao)
+        requisicao = data.recarregar_para_atendimento(requisicao)
         if not pode_atender_requisicao(ator, requisicao):
             raise PermissionDenied("Usuário sem permissão para atender esta requisição.")
-        itens_requisicao = queries.carregar_itens_bloqueados(requisicao)
+        itens_requisicao = data.carregar_itens_bloqueados(requisicao)
         itens_autorizados = [i for i in itens_requisicao if i.quantidade_autorizada > 0]
         validation.validar_itens_autorizados_existem(itens_autorizados, requisicao)
         dados_por_item_id, atendimento_parcial = validation.validar_itens_atendimento(
             itens, itens_autorizados
         )
-        queries.aplicar_itens_atendimento_parcial(itens_autorizados, dados_por_item_id)
+        data.aplicar_itens_atendimento_parcial(itens_autorizados, dados_por_item_id)
         apply_transition(
             requisicao=requisicao,
             transition_name="atender_parcial" if atendimento_parcial else "atender_total",
@@ -402,7 +400,7 @@ def atender_requisicao_com_itens(
                 "observacao_atendimento": observacao_atendimento.strip(),
             },
         )
-    return queries.recarregar_atendido(requisicao.pk)
+    return data.recarregar_atendido(requisicao.pk)
 
 
 def retirar_requisicao(
@@ -427,7 +425,7 @@ def retirar_requisicao(
                 "Usuário sem permissão para registrar retirada desta requisição."
             )
         retirante_fisico_normalizado = validation.validar_retirante(retirante_fisico)
-        itens_requisicao = queries.carregar_itens_bloqueados(requisicao)
+        itens_requisicao = data.carregar_itens_bloqueados(requisicao)
         validation.validar_consistencia_itens_retirada(itens_requisicao)
         apply_transition(
             requisicao=requisicao,
@@ -441,7 +439,7 @@ def retirar_requisicao(
         itens_autorizados = [i for i in itens_requisicao if i.quantidade_autorizada > 0]
         if itens_autorizados:
             stock.aplicar_saidas_e_liberacoes_retirada(requisicao, itens_autorizados)
-    return queries.recarregar_detalhe(requisicao.pk)
+    return data.recarregar_detalhe(requisicao.pk)
 
 
 def retirar_requisicao_idempotente(
@@ -467,7 +465,7 @@ def retirar_requisicao_idempotente(
             idempotency_key,
             IDEMPOTENCY_ENDPOINT_PICKUP,
             "Retirada com esta chave de idempotência ainda está em processamento.",
-            lambda: queries.recarregar_detalhe(requisicao.id),
+            lambda: data.recarregar_detalhe(requisicao.id),
         )
         if cached is not None:
             return cached
