@@ -4,6 +4,12 @@ from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied
 
 from apps.requisitions import data, idempotency
+from apps.requisitions.contexts import (
+    ContextoAtendimento,
+    ContextoAutorizacao,
+    ContextoCancelamento,
+    ContextoEnvio,
+)
 from apps.requisitions.domain import validation
 from apps.requisitions.domain.state_machine import apply_transition
 from apps.requisitions.domain.types import (
@@ -18,9 +24,6 @@ from apps.requisitions.models import (
     StatusRequisicao,
 )
 from apps.requisitions.policies import (
-    pode_atender_requisicao,
-    pode_autorizar_requisicao,
-    pode_cancelar_autorizada,
     pode_criar_requisicao_para,
     pode_manipular_pre_autorizacao,
     pode_retirar_requisicao,
@@ -76,7 +79,15 @@ def atualizar_rascunho_requisicao(
     itens: list[ItemRascunhoData],
 ) -> Requisicao:
     with transaction.atomic():
-        requisicao = data.carregar_rascunho_bloqueado(requisicao_id)
+        try:
+            requisicao = (
+                Requisicao.objects.select_related("criador", "beneficiario", "setor_beneficiario")
+                .select_for_update(of=("self",))
+                .prefetch_related("itens__material", "eventos__usuario")
+                .get(pk=requisicao_id)
+            )
+        except Requisicao.DoesNotExist as exc:
+            raise NotFound("Requisição não encontrada.") from exc
         if not pode_visualizar_requisicao(ator, requisicao):
             raise NotFound("Requisição não encontrada.")
         if not pode_manipular_pre_autorizacao(ator, requisicao):
@@ -94,13 +105,9 @@ def atualizar_rascunho_requisicao(
 
 
 def enviar_para_autorizacao(*, requisicao: Requisicao, ator: User) -> Requisicao:
-    with transaction.atomic():
-        requisicao = data.recarregar_para_autorizacao(requisicao)
-        if not pode_manipular_pre_autorizacao(ator, requisicao):
-            raise PermissionDenied("Apenas criador pode enviar a requisição.")
-        validation.validar_envio_para_autorizacao(list(requisicao.itens.all()))
-        is_primeiro_envio = not requisicao.numero_publico
-        if is_primeiro_envio:
+    with ContextoEnvio.abrir(requisicao, ator) as ctx:
+        validation.validar_envio_para_autorizacao(list(ctx.requisicao.itens.all()))
+        if ctx.is_primeiro_envio:
             transicao = "enviar_para_autorizacao"
             payload = {
                 "numero_publico": gerar_numero_publico(),
@@ -110,14 +117,24 @@ def enviar_para_autorizacao(*, requisicao: Requisicao, ator: User) -> Requisicao
             transicao = "reenviar_para_autorizacao"
             payload = {}
         apply_transition(
-            requisicao=requisicao, transition_name=transicao, actor=ator, payload=payload
+            requisicao=ctx.requisicao, transition_name=transicao, actor=ctx.ator, payload=payload
         )
     return data.recarregar_rascunho(requisicao.pk)
 
 
 def retornar_para_rascunho(*, requisicao: Requisicao, ator: User) -> Requisicao:
     with transaction.atomic():
-        requisicao = data.recarregar_para_atendimento(requisicao)
+        try:
+            requisicao = (
+                Requisicao.objects.select_for_update(of=("self",))
+                .select_related("criador", "beneficiario", "setor_beneficiario")
+                .prefetch_related("itens__material__estoque", "eventos__usuario")
+                .get(pk=requisicao.pk)
+            )
+        except Requisicao.DoesNotExist as exc:
+            raise NotFound("Requisição não encontrada.") from exc
+        if not pode_visualizar_requisicao(ator, requisicao):
+            raise NotFound("Requisição não encontrada.")
         if not pode_manipular_pre_autorizacao(ator, requisicao):
             raise PermissionDenied("Apenas criador ou beneficiário podem retornar a requisição.")
         apply_transition(
@@ -138,45 +155,6 @@ def descartar_rascunho_nunca_enviado(*, requisicao: Requisicao, ator: User) -> N
         requisicao.delete()
 
 
-def _cancelar_pre_autorizacao(*, requisicao: Requisicao, ator: User) -> Requisicao:
-    if not pode_manipular_pre_autorizacao(ator, requisicao):
-        if requisicao.status == StatusRequisicao.RASCUNHO:
-            raise PermissionDenied("Apenas criador pode cancelar a requisição.")
-        raise PermissionDenied("Apenas criador ou beneficiário podem cancelar a requisição.")
-    validation.validar_status_cancelamento_pre(requisicao)
-    return apply_transition(
-        requisicao=requisicao,
-        transition_name="cancelar_pre_autorizacao",
-        actor=ator,
-        payload={"data_finalizacao": timezone.now()},
-    )
-
-
-def _cancelar_autorizada_sem_saldo(
-    *, requisicao: Requisicao, ator: User, motivo_cancelamento: str, stock: StockPort
-) -> Requisicao:
-    motivo_cancelamento = validation.validar_motivo(
-        motivo_cancelamento, "motivo_cancelamento", "Motivo do cancelamento é obrigatório."
-    )
-    if not pode_cancelar_autorizada(ator, requisicao):
-        raise PermissionDenied("Usuário sem permissão para cancelar esta requisição.")
-    itens_requisicao = data.carregar_itens_bloqueados(requisicao)
-    itens_autorizados = [i for i in itens_requisicao if i.quantidade_autorizada > 0]
-    validation.validar_itens_autorizados_existem(itens_autorizados, requisicao)
-    apply_transition(
-        requisicao=requisicao,
-        transition_name="cancelar_pos_autorizacao_sem_saldo",
-        actor=ator,
-        payload={
-            "responsavel_atendimento": ator,
-            "data_finalizacao": timezone.now(),
-            "motivo_cancelamento": motivo_cancelamento,
-        },
-    )
-    stock.liberar_reservas_cancelamento(requisicao, itens_autorizados)
-    return requisicao
-
-
 def cancelar_requisicao(
     *,
     requisicao: Requisicao,
@@ -186,17 +164,35 @@ def cancelar_requisicao(
 ) -> Requisicao:
     if stock is None:
         stock = _get_default_stock()
-    with transaction.atomic():
-        requisicao = data.recarregar_para_atendimento(requisicao)
-        if requisicao.status == StatusRequisicao.AUTORIZADA:
-            requisicao = _cancelar_autorizada_sem_saldo(
-                requisicao=requisicao,
-                ator=ator,
-                motivo_cancelamento=motivo_cancelamento,
-                stock=stock,
+    with ContextoCancelamento.abrir(requisicao, ator) as ctx:
+        if ctx.requer_liberacao_estoque:
+            motivo_cancelamento = validation.validar_motivo(
+                motivo_cancelamento,
+                "motivo_cancelamento",
+                "Motivo do cancelamento é obrigatório.",
             )
+            itens_requisicao = data.carregar_itens_bloqueados(ctx.requisicao)
+            itens_autorizados = [i for i in itens_requisicao if i.quantidade_autorizada > 0]
+            validation.validar_itens_autorizados_existem(itens_autorizados, ctx.requisicao)
+            apply_transition(
+                requisicao=ctx.requisicao,
+                transition_name="cancelar_pos_autorizacao_sem_saldo",
+                actor=ctx.ator,
+                payload={
+                    "responsavel_atendimento": ctx.ator,
+                    "data_finalizacao": timezone.now(),
+                    "motivo_cancelamento": motivo_cancelamento,
+                },
+            )
+            stock.liberar_reservas_cancelamento(ctx.requisicao, itens_autorizados)
         else:
-            requisicao = _cancelar_pre_autorizacao(requisicao=requisicao, ator=ator)
+            validation.validar_status_cancelamento_pre(ctx.requisicao)
+            apply_transition(
+                requisicao=ctx.requisicao,
+                transition_name="cancelar_pre_autorizacao",
+                actor=ctx.ator,
+                payload={"data_finalizacao": timezone.now()},
+            )
     return data.recarregar_atendido(requisicao.pk)
 
 
@@ -209,11 +205,8 @@ def autorizar_requisicao(
 ) -> Requisicao:
     if stock is None:
         stock = _get_default_stock()
-    with transaction.atomic():
-        requisicao = data.recarregar_para_autorizacao(requisicao)
-        if not pode_autorizar_requisicao(ator, requisicao):
-            raise PermissionDenied("Usuário sem permissão para autorizar esta requisição.")
-        itens_requisicao = data.carregar_itens_bloqueados(requisicao)
+    with ContextoAutorizacao.abrir(requisicao, ator) as ctx:
+        itens_requisicao = data.carregar_itens_bloqueados(ctx.requisicao)
         itens_por_id = validation._validar_itens_autorizacao(
             itens_requisicao=itens_requisicao, itens=itens
         )
@@ -222,14 +215,14 @@ def autorizar_requisicao(
         if any(i.quantidade_autorizada < i.quantidade_solicitada for i in itens_requisicao):
             transicao = "autorizar_parcial"
         apply_transition(
-            requisicao=requisicao,
+            requisicao=ctx.requisicao,
             transition_name=transicao,
-            actor=ator,
-            payload={"chefe_autorizador": ator, "data_autorizacao_ou_recusa": timezone.now()},
+            actor=ctx.ator,
+            payload={"chefe_autorizador": ctx.ator, "data_autorizacao_ou_recusa": timezone.now()},
         )
         itens_autorizados = [i for i in itens_requisicao if i.quantidade_autorizada > 0]
         if itens_autorizados:
-            stock.aplicar_reservas_autorizacao(requisicao, itens_autorizados)
+            stock.aplicar_reservas_autorizacao(ctx.requisicao, itens_autorizados)
     return data.recarregar_autorizado(requisicao.pk)
 
 
@@ -237,16 +230,13 @@ def recusar_requisicao(*, requisicao: Requisicao, ator: User, motivo_recusa: str
     motivo_recusa = validation.validar_motivo(
         motivo_recusa, "motivo_recusa", "Motivo da recusa é obrigatório."
     )
-    with transaction.atomic():
-        requisicao = data.recarregar_para_autorizacao(requisicao)
-        if not pode_autorizar_requisicao(ator, requisicao):
-            raise PermissionDenied("Usuário sem permissão para recusar esta requisição.")
+    with ContextoAutorizacao.abrir(requisicao, ator) as ctx:
         apply_transition(
-            requisicao=requisicao,
+            requisicao=ctx.requisicao,
             transition_name="recusar",
-            actor=ator,
+            actor=ctx.ator,
             payload={
-                "chefe_autorizador": ator,
+                "chefe_autorizador": ctx.ator,
                 "motivo_recusa": motivo_recusa,
                 "data_autorizacao_ou_recusa": timezone.now(),
             },
@@ -351,20 +341,17 @@ def atender_requisicao_completa(
     ator: User,
     observacao_atendimento: str = "",
 ) -> Requisicao:
-    with transaction.atomic():
-        requisicao = data.recarregar_para_atendimento(requisicao)
-        if not pode_atender_requisicao(ator, requisicao):
-            raise PermissionDenied("Usuário sem permissão para atender esta requisição.")
-        itens_requisicao = data.carregar_itens_bloqueados(requisicao)
+    with ContextoAtendimento.abrir(requisicao, ator) as ctx:
+        itens_requisicao = data.carregar_itens_bloqueados(ctx.requisicao)
         itens_autorizados = [i for i in itens_requisicao if i.quantidade_autorizada > 0]
-        validation.validar_itens_autorizados_existem(itens_autorizados, requisicao)
+        validation.validar_itens_autorizados_existem(itens_autorizados, ctx.requisicao)
         data.aplicar_itens_atendimento_completo(itens_autorizados)
         apply_transition(
-            requisicao=requisicao,
+            requisicao=ctx.requisicao,
             transition_name="atender_total",
-            actor=ator,
+            actor=ctx.ator,
             payload={
-                "responsavel_atendimento": ator,
+                "responsavel_atendimento": ctx.ator,
                 "data_finalizacao": timezone.now(),
                 "observacao_atendimento": observacao_atendimento.strip(),
             },
@@ -379,23 +366,20 @@ def atender_requisicao_com_itens(
     itens: list[ItemAtendimentoData],
     observacao_atendimento: str = "",
 ) -> Requisicao:
-    with transaction.atomic():
-        requisicao = data.recarregar_para_atendimento(requisicao)
-        if not pode_atender_requisicao(ator, requisicao):
-            raise PermissionDenied("Usuário sem permissão para atender esta requisição.")
-        itens_requisicao = data.carregar_itens_bloqueados(requisicao)
+    with ContextoAtendimento.abrir(requisicao, ator) as ctx:
+        itens_requisicao = data.carregar_itens_bloqueados(ctx.requisicao)
         itens_autorizados = [i for i in itens_requisicao if i.quantidade_autorizada > 0]
-        validation.validar_itens_autorizados_existem(itens_autorizados, requisicao)
+        validation.validar_itens_autorizados_existem(itens_autorizados, ctx.requisicao)
         dados_por_item_id, atendimento_parcial = validation.validar_itens_atendimento(
             itens, itens_autorizados
         )
         data.aplicar_itens_atendimento_parcial(itens_autorizados, dados_por_item_id)
         apply_transition(
-            requisicao=requisicao,
+            requisicao=ctx.requisicao,
             transition_name="atender_parcial" if atendimento_parcial else "atender_total",
-            actor=ator,
+            actor=ctx.ator,
             payload={
-                "responsavel_atendimento": ator,
+                "responsavel_atendimento": ctx.ator,
                 "data_finalizacao": timezone.now(),
                 "observacao_atendimento": observacao_atendimento.strip(),
             },

@@ -152,6 +152,12 @@ def pode_cancelar_autorizada(user, requisicao: Requisicao) -> bool:
     return pode_manipular_pre_autorizacao(user, requisicao) or pode_operar_estoque(user)
 
 
+def pode_cancelar_requisicao(user, requisicao: Requisicao) -> bool:
+    if requisicao.status == StatusRequisicao.AUTORIZADA:
+        return pode_cancelar_autorizada(user, requisicao)
+    return pode_manipular_pre_autorizacao(user, requisicao)
+
+
 def pode_autorizar_requisicao(user, requisicao: Requisicao) -> bool:
     return usuario_operacional_ativo(user) and pode_autorizar_setor(
         user, requisicao.setor_beneficiario

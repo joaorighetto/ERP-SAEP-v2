@@ -55,36 +55,6 @@ def recarregar_detalhe(requisicao_id: int) -> Requisicao:
 # --- Carregar com lock (dentro de transação) ---
 
 
-def recarregar_para_autorizacao(requisicao: Requisicao) -> Requisicao:
-    return (
-        Requisicao.objects.select_for_update(of=("self",))
-        .select_related("criador", "beneficiario", "setor_beneficiario")
-        .prefetch_related("itens__material__estoque", "eventos__usuario")
-        .get(pk=requisicao.pk)
-    )
-
-
-def recarregar_para_atendimento(requisicao: Requisicao) -> Requisicao:
-    return (
-        Requisicao.objects.select_for_update(of=("self",))
-        .select_related("criador", "beneficiario", "setor_beneficiario")
-        .prefetch_related("itens__material__estoque", "eventos__usuario")
-        .get(pk=requisicao.pk)
-    )
-
-
-def carregar_rascunho_bloqueado(requisicao_id: int) -> Requisicao:
-    try:
-        return (
-            Requisicao.objects.select_related("criador", "beneficiario", "setor_beneficiario")
-            .select_for_update(of=("self",))
-            .prefetch_related("itens__material", "eventos__usuario")
-            .get(pk=requisicao_id)
-        )
-    except Requisicao.DoesNotExist as exc:
-        raise NotFound("Requisição não encontrada.") from exc
-
-
 def carregar_beneficiario_e_setor(beneficiario_id: int) -> tuple[User, Setor]:
     try:
         beneficiario = User.objects.select_for_update().get(pk=beneficiario_id)
