@@ -60,6 +60,31 @@ O `superusuário` permanece fora do foco da SPA no primeiro corte, usando admin 
 - `Playwright`
 - `pnpm`
 
+### Decisões de design system para a PR #30
+
+- `shadcn/ui` + `Radix UI` devem ser materializados incrementalmente a partir da PR #30, não apenas mantidos como stack nominal.
+- A primeira leva de primitives é fechada para a PR #30: `Button`, `Input`, `Label`, `Alert`, `Separator`, `Sheet` e `Card`. `DropdownMenu`, `Dialog`, `Tabs`, `Table`, `Badge` e `Toast` ficam fora até haver uso funcional concreto.
+- Wrappers locais só devem existir para composições com semântica do produto, como `AuthLayout`, `AppShell` e `NavItem`.
+- O shell da PR #30 continua desktop-first para o uso operacional, mas já deve nascer responsivo: desktop com sidebar persistente e topo compacto; mobile com navegação recolhida em menu/drawer.
+- A navegação principal deve esconder áreas que não pertencem ao `papel` operacional do usuário; acessos diretos por URL devem renderizar uma negativa de permissão clara, com o motivo contextual.
+- O destino pós-login deve apontar para a rota principal futura do papel, ainda que ela renderize placeholder protegido na PR #30: `Solicitante` e `Auxiliar de setor` em `/minhas-requisicoes`; `Chefe de setor` em `/autorizacoes`; `Auxiliar de Almoxarifado` e `Chefe de Almoxarifado` em `/atendimentos`; papel desconhecido em `/unknown-role`.
+- A rota `/` deve permanecer sem dashboard próprio na PR #30: se não autenticado, redireciona para `/login`; se autenticado, redireciona para o destino pós-login do `papel`; se o papel for desconhecido, redireciona para `/unknown-role`.
+- A navegação da PR #30 deve exibir `Nova requisição` para todos os papéis operacionais ativos, como ação primária/rota protegida placeholder, mas nunca como destino automático pós-login. A diferença entre papéis entra no escopo de beneficiário: `Solicitante` para si; `Auxiliar de setor` para o próprio setor; `Chefe de setor` para setor sob responsabilidade; Almoxarifado para qualquer funcionário. Superusuário permanece fora do foco da SPA.
+- A identidade visual do shell deve tratar `SAEP` como marca institucional discreta e `WMS Almoxarifado` como nome funcional curto da interface; evitar expor `WMS-SAEP` como rótulo principal da UI operacional.
+- O tom visual deve ser institucional, sóbrio e operacional: tema claro, alto contraste, poucos acentos, densidade moderada e foco em leitura/ação. Evitar hero, gradientes decorativos, dashboards promocionais e cards grandes explicando o sistema.
+- A PR #30 pode adicionar `lucide-react` como dependência visual mínima. Ícones devem ser importados nominalmente, usados como apoio ao texto na navegação e em ações principais, e só podem aparecer sozinhos em controles reconhecíveis com nome acessível (`aria-label` ou equivalente).
+- `/login` deve ficar fora do shell autenticado, com layout próprio e mínimo: marca `SAEP`, nome `WMS Almoxarifado`, formulário compacto e estado de erro visível. O `AppShell` só deve renderizar depois de uma sessão autenticada.
+- Placeholders protegidos da PR #30 devem ser específicos por área/papel (`Minhas requisições`, `Autorizações`, `Atendimentos`) e explicar que a área protegida foi validada, mas o fluxo operacional entra em PR futura.
+- A PR #30 deve estabelecer baseline pragmático de acessibilidade alinhado a WCAG AA para auth/shell: foco visível, navegação essencial por teclado, `Label` explícito para inputs, erro associado ao campo quando aplicável, contraste AA, alvos confortáveis, ícone isolado com nome acessível, estados distinguíveis sem depender só de cor e nenhuma informação transmitida apenas por cor. Não exige auditoria completa, mas deve cobrir esses contratos por smoke/unit tests onde fizer sentido.
+- O contrato de testes da PR #30 deve priorizar Vitest para a matriz de regras: redirect por sessão/papel, login fora do shell, home por papel, papel desconhecido, menu por papel, `Nova requisição` para papéis operacionais, acesso direto negado, logout, erro de login, sessão expirada e erro de bootstrap. Playwright deve ser smoke: um caminho feliz com login real, shell, navegação mínima e logout; e um caminho negativo de acesso direto proibido com 403 amigável. Não testar worklists nesta PR. Esconder menu é UX; proteção de rota é requisito de segurança e produto.
+- O shell da PR #30 deve ser stateless quanto a preferências visuais: menu mobile com estado local, fechando ao navegar, ao fazer logout ou quando a rota muda; sidebar desktop sempre visível e sem colapso. Não persistir preferência em `localStorage` ou `sessionStorage` nesta PR.
+- A PR #30 não deve introduzir sistema global de toast. Erro de login fica no formulário; erro de bootstrap vira estado de página retryable; erro de logout fica visível no shell ou área de conta. `FormError`, `InlineAlert` e `RetryableState` podem existir como primitives/contextuais, sem provider global.
+- O `components.json` do shadcn deve ser versionado com aliases para `frontend/src/shared/ui` e `frontend/src/shared/lib`. Não criar `components/ui` nem `lib/utils` paralelos.
+- Componentes genéricos reutilizáveis ficam em `shared/ui`; compostos específicos de shell/auth da PR #30 permanecem no módulo/app layer correspondente até demonstrarem reutilização real.
+- `Alert` deve ser usado para feedback contextual persistente de erro, negação de permissão e indisponibilidade.
+- `Sheet` deve ser usado apenas para a navegação mobile do shell; outros usos, como formulários, detalhes, confirmação ou fluxos operacionais, ficam fora da PR #30.
+- A PR #30 não deve introduzir componentes operacionais de worklist, tabela, wizard, notificações, PWA, analytics ou fluxos de requisição.
+
 ## 5. Estrutura de pastas
 
 ```text
