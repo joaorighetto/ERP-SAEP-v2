@@ -40,6 +40,10 @@ _Avoid_: fila de autorização, lista do solicitante
 Lista de trabalho do usuário para acompanhar requisições próprias como criador ou beneficiário.
 _Avoid_: fila de autorização, fila de atendimento
 
+**Solicitar requisição**:
+Ato de iniciar uma requisição no piloto por um usuário operacional ativo, respeitando o escopo de beneficiário permitido para seu papel.
+_Avoid_: função exclusiva do papel Solicitante
+
 **Descartar rascunho**:
 Exclusão de um rascunho que nunca foi enviado para autorização e ainda não virou requisição formal.
 _Avoid_: cancelar rascunho, apagar requisição formal
@@ -56,6 +60,7 @@ _Avoid_: descartar, apagar do sistema
 - Um **Auxiliar de Almoxarifado** trabalha na **Fila de atendimento**
 - Um **Chefe de Almoxarifado** trabalha na **Fila de atendimento** e só autoriza requisições do setor Almoxarifado
 - Cada usuário opera o piloto com um único **Papel operacional principal**
+- Qualquer usuário operacional ativo pode **Solicitar requisição**, com escopo de beneficiário definido pelo seu papel
 - **Descartar rascunho** só existe antes da formalização da requisição
 - **Cancelar requisição** só se aplica a uma requisição já formalizada
 
@@ -73,5 +78,6 @@ _Avoid_: descartar, apagar do sistema
 ## Flagged ambiguities
 
 - "auxiliar de setor" foi usado como se também fosse autorizador — resolvido: ele apoia a criação de requisições do próprio setor, mas não autoriza
+- "solicitar requisição" foi tratado como se fosse exclusivo do papel **Solicitante** — resolvido: todos os papéis operacionais ativos podem solicitar, respeitando o escopo do seu papel
 - "descartar" e "cancelar" podem soar iguais na UI — resolvido: **Descartar rascunho** apaga o rascunho nunca formalizado; **Cancelar requisição** encerra uma requisição formal preservando histórico
 - "papéis múltiplos simultâneos" foi assumido no frontend — resolvido: o piloto atual usa um único **Papel operacional principal** por usuário
