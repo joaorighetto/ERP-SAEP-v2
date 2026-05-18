@@ -58,3 +58,6 @@ Thumbs.db
 
 # Code review artefacts
 docs/code-reviews/
+
+# Superpowers
+.superpowers/

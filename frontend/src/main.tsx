@@ -4,7 +4,6 @@ import { RouterProvider } from "@tanstack/react-router";
 
 import { AppProviders } from "./app/providers";
 import { router } from "./app/router";
-import { registerServiceWorker } from "./features/pwa/service-worker";
 import "./styles.css";
 
 const rootElement = document.getElementById("root");
@@ -20,7 +19,3 @@ createRoot(rootElement).render(
     </AppProviders>
   </StrictMode>,
 );
-
-if (!import.meta.env.TEST) {
-  void registerServiceWorker();
-}

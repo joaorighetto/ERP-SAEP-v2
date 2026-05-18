@@ -15,7 +15,11 @@ Este documento é canônico para:
 
 ## 2. Escopo ativo
 
-O frontend do piloto faz parte do escopo ativo do projeto.
+O frontend do piloto segue no escopo ativo do projeto, mas está em reset neutro desde a issue #28.
+
+A UI de produto construída antes desse reset foi descartada pela issue #27. O que permanece válido é a infraestrutura técnica da SPA: `frontend/`, Vite, TanStack Router, TanStack Query, client OpenAPI tipado, smoke tests, integração com `Makefile` e contrato de sessão/API.
+
+Até a issue #29 definir design system e layout base, não implementar nem restaurar telas de produto, shell autenticado definitivo, worklists ou fluxos operacionais. A PR #30/auth-shell depende dessa decisão.
 
 O objetivo não é abrir uma frente genérica de UI, e sim entregar a interface operacional mínima do piloto para:
 
@@ -130,19 +134,17 @@ Rotas públicas da SPA:
 
 Regras:
 
-- `/requisicoes/:id` é a rota canônica de detalhe;
-- worklists entram no detalhe com `?contexto=autorizacao` ou `?contexto=atendimento`;
-- sem `contexto`, o detalhe fica em modo neutro;
-- worklists especializadas continuam com endpoints próprios de backend.
+- as rotas documentadas permanecem disponíveis no reset neutro;
+- o comportamento de produto anterior dessas rotas está descartado;
+- durante o reset, cada rota preservada deve renderizar título + `Interface do piloto em reconstrucao.`;
+- novas rotas de produto só entram após decisão de design system/layout da issue #29;
+- enquanto isso, qualquer rota preservada deve ser neutra, técnica e sem assumir navegação operacional final.
 
 Homes por papel:
 
-- `solicitante`: `Minhas requisições`
-- `auxiliar_setor`: `Minhas requisições`
-- `chefe_setor`: `Fila de autorizações`
-- `auxiliar_almoxarifado`: `Fila de atendimento`
-- `chefe_almoxarifado`: `Fila de atendimento`
-- papel desconhecido: página neutra `/unknown-role`, sem voltar para `/login`, para evitar loop e explicitar desalinhamento de contrato/cadastro.
+- não há home operacional vigente;
+- qualquer redirecionamento pós-login deve permanecer neutro até a issue #29;
+- papel desconhecido deve continuar sem loop de login e explicitar desalinhamento de contrato/cadastro.
 
 ## 8. Bloco 0 de APIs habilitadoras
 
@@ -177,6 +179,8 @@ Regras complementares:
 
 ## 9. Sequência de implementação
 
+Sequência histórica planejada antes do reset neutro. Após a issue #28, ela deixa de autorizar implementação de produto até a issue #29 fechar design system e layout base.
+
 1. Bloco 0 de backend
 2. Fundação do frontend:
    - `frontend/`
@@ -193,14 +197,17 @@ Regras complementares:
 7. `Fila de atendimento` + atendimento total/parcial + cancelamento operacional permitido
 8. Notificações como segunda onda
 
-Estado atual após a fatia #37:
+Estado atual após o reset neutro da issue #28:
 
 - bloco 0 de backend concluído;
-- fundação `frontend/` concluída;
-- login real, bootstrap via `GET /api/v1/auth/me/`, guards, logout com erro visível, home por papel e fallback `/unknown-role` implementados;
-- próxima fatia funcional da SPA deve partir de `Minhas requisições` e detalhe canônico.
+- infraestrutura técnica `frontend/` preservada;
+- UI de produto anterior descartada;
+- contrato atual de rota é neutro: as rotas documentadas continuam acessíveis e exibem título + `Interface do piloto em reconstrucao.`;
+- PR #30/auth-shell bloqueada até a issue #29 fechar design system e layout base.
 
 ## 10. Worklists e detalhe
+
+Contrato-alvo de produto temporariamente suspenso pelo reset neutro: decisões de design, layout e validação de requisitos dependem da resolução da issue `#29`.
 
 ### Minhas requisições
 

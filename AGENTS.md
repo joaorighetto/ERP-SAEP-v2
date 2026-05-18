@@ -27,6 +27,8 @@ WMS auxiliar para o **SAEP — Serviço de Água e Esgoto de Pirassununga**, aut
 
 A fundação dessa SPA já existe em `frontend/`, com Vite, TanStack Router file-based, TanStack Query, client OpenAPI tipado e smoke tests. As próximas fatias devem partir dessa base, não recriá-la.
 
+Após a decisão de reset neutro do frontend (issue #28), a UI de produto anterior da SPA foi descartada. Preserve apenas a infraestrutura técnica documentada; não ressuscite rotas, telas, layout ou fluxos antigos sem nova decisão explícita. A PR #30/auth-shell fica bloqueada até a issue #29 definir design system e layout base.
+
 ## Estratégia de leitura da documentação
 
 Para economizar tokens e manter os agentes focados, a documentação de design do projeto está dividida por frequência de uso:
@@ -184,5 +186,5 @@ docs: update pilot data modeling notes
 - Rode a suíte completa de testes após qualquer refactor e confirme a contagem de testes passados antes de commitar.
 - Ao depurar falhas de teste, capture o traceback completo antes de tentar corrigir.
 - Para testes Django: `rtk make test` (usa `DJANGO_SETTINGS_MODULE=config.settings.test` com opções seguras do pytest).
-- Para testes de frontend: `rtk make frontend-test` (Vitest), `rtk make frontend-e2e` (Playwright com seedata).
+- Para testes de frontend: `rtk make frontend-test` (Vitest), `rtk make frontend-e2e` (Playwright com seed data).
 - Verifique a consistência do estado do banco de dados: resete com `rtk make resetdb` e recarregue os seeds com `rtk make seed-pilot-minimo` antes do E2E.
