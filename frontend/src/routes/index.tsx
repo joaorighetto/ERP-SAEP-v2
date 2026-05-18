@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import { neutralRoutes } from "../shared/config/neutral-routes";
+import { NEUTRAL_ROUTE_MESSAGE, neutralRoutes } from "../shared/config/neutral-routes";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -12,7 +12,7 @@ function HomePage() {
       <section className="neutral-panel" aria-labelledby="route-index-title">
         <p className="neutral-eyebrow">SPA do piloto</p>
         <h1 id="route-index-title">Índice técnico</h1>
-        <p>Interface do piloto em reconstrucao.</p>
+        <p>{NEUTRAL_ROUTE_MESSAGE}</p>
         <nav aria-label="Rotas preservadas">
           <ul className="neutral-route-list">
             {neutralRoutes.map((route) => (

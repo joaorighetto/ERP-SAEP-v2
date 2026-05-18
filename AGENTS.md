@@ -186,5 +186,5 @@ docs: update pilot data modeling notes
 - Rode a suíte completa de testes após qualquer refactor e confirme a contagem de testes passados antes de commitar.
 - Ao depurar falhas de teste, capture o traceback completo antes de tentar corrigir.
 - Para testes Django: `rtk make test` (usa `DJANGO_SETTINGS_MODULE=config.settings.test` com opções seguras do pytest).
-- Para testes de frontend: `rtk make frontend-test` (Vitest), `rtk make frontend-e2e` (Playwright com seedata).
+- Para testes de frontend: `rtk make frontend-test` (Vitest), `rtk make frontend-e2e` (Playwright com seed data).
 - Verifique a consistência do estado do banco de dados: resete com `rtk make resetdb` e recarregue os seeds com `rtk make seed-pilot-minimo` antes do E2E.
