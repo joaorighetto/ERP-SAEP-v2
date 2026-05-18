@@ -1,31 +1,28 @@
 import { expect, test } from "@playwright/test";
 
-const neutralRoutes = [
-  { title: "Login", path: "/login" },
-  { title: "Minhas requisições", path: "/minhas-requisicoes" },
-  { title: "Nova requisição", path: "/requisicoes/nova" },
-  { title: "Detalhe da requisição", path: "/requisicoes/1" },
-  { title: "Fila de autorizações", path: "/autorizacoes" },
-  { title: "Fila de atendimento", path: "/atendimentos" },
-  { title: "Papel desconhecido", path: "/unknown-role" },
-] as const;
+import {
+  NEUTRAL_ROUTE_MESSAGE,
+  neutralRoutes,
+} from "../../src/shared/config/neutral-routes";
 
 test("renders technical route index with preserved routes @qa-final", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "Índice técnico" })).toBeVisible();
-  await expect(page.getByText("Interface do piloto em reconstrucao.")).toBeVisible();
+  await expect(page.getByText(NEUTRAL_ROUTE_MESSAGE)).toBeVisible();
 
   for (const route of neutralRoutes) {
-    await expect(page.getByRole("link", { name: route.title })).toBeVisible();
+    const link = page.getByRole("link", { name: route.title });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", route.href);
   }
 });
 
 for (const route of neutralRoutes) {
-  test(`renders neutral contract for ${route.path} @qa-final`, async ({ page }) => {
-    await page.goto(route.path);
+  test(`renders neutral contract for ${route.href} @qa-final`, async ({ page }) => {
+    await page.goto(route.href);
 
     await expect(page.getByRole("heading", { name: route.title })).toBeVisible();
-    await expect(page.getByText("Interface do piloto em reconstrucao.")).toBeVisible();
+    await expect(page.getByText(NEUTRAL_ROUTE_MESSAGE)).toBeVisible();
   });
 }

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { neutralRoutes } from "../shared/config/neutral-routes";
 
@@ -17,9 +17,15 @@ function HomePage() {
           <ul className="neutral-route-list">
             {neutralRoutes.map((route) => (
               <li key={route.href}>
-                <a className="neutral-link" href={route.href}>
-                  {route.title}
-                </a>
+                {"params" in route ? (
+                  <Link className="neutral-link" to={route.to} params={route.params}>
+                    {route.title}
+                  </Link>
+                ) : (
+                  <Link className="neutral-link" to={route.to}>
+                    {route.title}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

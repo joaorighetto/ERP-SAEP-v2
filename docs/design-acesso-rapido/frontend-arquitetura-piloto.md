@@ -207,7 +207,8 @@ Estado atual após o reset neutro da issue #28:
 
 ## 10. Worklists e detalhe
 
-Contrato-alvo de produto, suspenso pelo reset neutro até nova decisão de design/layout (issue `#29`).
+Contrato-alvo de produto temporariamente suspenso pelo reset neutro: decisões de design, layout e validação de requisitos dependem da resolução da issue `#29`.
+
 ### Minhas requisições
 
 - lista única;
