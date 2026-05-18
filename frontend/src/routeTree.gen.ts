@@ -14,7 +14,6 @@ import { Route as MinhasRequisicoesRouteImport } from './routes/minhas-requisico
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AutorizacoesRouteImport } from './routes/autorizacoes'
 import { Route as AtendimentosRouteImport } from './routes/atendimentos'
-import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RequisicoesNovaRouteImport } from './routes/requisicoes/nova'
 import { Route as RequisicoesIdRouteImport } from './routes/requisicoes/$id'
@@ -44,11 +43,6 @@ const AtendimentosRoute = AtendimentosRouteImport.update({
   path: '/atendimentos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AlertasRoute = AlertasRouteImport.update({
-  id: '/alertas',
-  path: '/alertas',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -67,7 +61,6 @@ const RequisicoesIdRoute = RequisicoesIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/alertas': typeof AlertasRoute
   '/atendimentos': typeof AtendimentosRoute
   '/autorizacoes': typeof AutorizacoesRoute
   '/login': typeof LoginRoute
@@ -78,7 +71,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/alertas': typeof AlertasRoute
   '/atendimentos': typeof AtendimentosRoute
   '/autorizacoes': typeof AutorizacoesRoute
   '/login': typeof LoginRoute
@@ -90,7 +82,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/alertas': typeof AlertasRoute
   '/atendimentos': typeof AtendimentosRoute
   '/autorizacoes': typeof AutorizacoesRoute
   '/login': typeof LoginRoute
@@ -103,7 +94,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/alertas'
     | '/atendimentos'
     | '/autorizacoes'
     | '/login'
@@ -114,7 +104,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/alertas'
     | '/atendimentos'
     | '/autorizacoes'
     | '/login'
@@ -125,7 +114,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/alertas'
     | '/atendimentos'
     | '/autorizacoes'
     | '/login'
@@ -137,7 +125,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AlertasRoute: typeof AlertasRoute
   AtendimentosRoute: typeof AtendimentosRoute
   AutorizacoesRoute: typeof AutorizacoesRoute
   LoginRoute: typeof LoginRoute
@@ -184,13 +171,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AtendimentosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/alertas': {
-      id: '/alertas'
-      path: '/alertas'
-      fullPath: '/alertas'
-      preLoaderRoute: typeof AlertasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -217,7 +197,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AlertasRoute: AlertasRoute,
   AtendimentosRoute: AtendimentosRoute,
   AutorizacoesRoute: AutorizacoesRoute,
   LoginRoute: LoginRoute,

@@ -27,6 +27,8 @@ WMS auxiliar para o **SAEP — Serviço de Água e Esgoto de Pirassununga**, aut
 
 A fundação dessa SPA já existe em `frontend/`, com Vite, TanStack Router file-based, TanStack Query, client OpenAPI tipado e smoke tests. As próximas fatias devem partir dessa base, não recriá-la.
 
+Após a decisão de reset neutro do frontend (issue #28), a UI de produto anterior da SPA foi descartada. Preserve apenas a infraestrutura técnica documentada; não ressuscite rotas, telas, layout ou fluxos antigos sem nova decisão explícita. A PR #30/auth-shell fica bloqueada até a issue #29 definir design system e layout base.
+
 ## Estratégia de leitura da documentação
 
 Para economizar tokens e manter os agentes focados, a documentação de design do projeto está dividida por frequência de uso:
