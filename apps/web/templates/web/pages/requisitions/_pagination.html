@@ -1,0 +1,5 @@
+{% if page_obj and page_obj.paginator.num_pages > 1 %}
+<div hx-boost="false">
+  {% include "web/components/pagination.html" with page_obj=page_obj testid="requisitions-pagination" %}
+</div>
+{% endif %}

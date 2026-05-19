@@ -1,0 +1,37 @@
+{% comment %}Tabela desktop — oculta em mobile{% endcomment %}
+<div class="hidden lg:block overflow-x-auto rounded-lg"
+     style="border: 1px solid var(--color-border);">
+  <table class="w-full text-sm" data-testid="requisitions-table">
+    <caption class="sr-only">Minhas solicitações</caption>
+    <thead style="background-color: var(--color-surface-muted);">
+      <tr>
+        <th scope="col" class="px-4 py-3 text-left font-semibold" style="color: var(--color-text-secondary);">Número</th>
+        <th scope="col" class="px-4 py-3 text-left font-semibold" style="color: var(--color-text-secondary);">Status</th>
+        <th scope="col" class="px-4 py-3 text-left font-semibold" style="color: var(--color-text-secondary);">Itens</th>
+        <th scope="col" class="px-4 py-3 text-left font-semibold" style="color: var(--color-text-secondary);">Beneficiário</th>
+        <th scope="col" class="px-4 py-3 text-left font-semibold" style="color: var(--color-text-secondary);">Data</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr style="border-top: 1px solid var(--color-border);" data-testid="requisition-row">
+        <td class="px-4 py-3" style="color: var(--color-text-primary);">
+          {% if item.is_rascunho %}
+          <span class="italic" style="color: var(--color-text-muted);">Rascunho</span>
+          {% else %}
+          {{ item.numero_publico }}
+          {% endif %}
+        </td>
+        <td class="px-4 py-3">
+          {% include "web/components/badge.html" with variant=item.status_variant label=item.status_label %}
+        </td>
+        <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ item.resumo_itens }}</td>
+        <td class="px-4 py-3" style="color: var(--color-text-secondary);">
+          {% if item.is_beneficiario_terceiro %}{{ item.beneficiario_nome }}{% else %}&mdash;{% endif %}
+        </td>
+        <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ item.data_label }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

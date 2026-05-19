@@ -1,0 +1,40 @@
+{% comment %}Cards mobile — um card por solicitação{% endcomment %}
+<ul class="flex flex-col gap-3 lg:hidden" role="list" aria-label="Minhas solicitações">
+  {% for item in items %}
+  <li class="rounded-lg px-4 py-3"
+      style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);"
+      data-testid="requisition-card">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold truncate" style="color: var(--color-text-primary);">
+          {% if item.is_rascunho %}
+            <span style="color: var(--color-text-muted);">Rascunho</span>
+          {% else %}
+            {{ item.numero_publico }}
+          {% endif %}
+        </p>
+        {% if item.is_beneficiario_terceiro %}
+        <p class="text-xs mt-0.5 truncate" style="color: var(--color-text-muted);">
+          Para: {{ item.beneficiario_nome }}
+        </p>
+        {% endif %}
+        <p class="text-xs mt-1" style="color: var(--color-text-muted);">
+          {{ item.resumo_itens }} &middot; {{ item.data_label }}
+        </p>
+      </div>
+      <div class="shrink-0 mt-0.5">
+        {% include "web/components/badge.html" with variant=item.status_variant label=item.status_label %}
+      </div>
+    </div>
+    {% if item.can_view_detail and item.detail_url %}
+    <div class="mt-3 pt-3" style="border-top: 1px solid var(--color-border);">
+      <a href="{{ item.detail_url }}"
+         class="btn btn-secondary btn-sm w-full"
+         aria-label="Ver detalhe da solicitação {{ item.numero_publico }}">
+        Ver detalhe
+      </a>
+    </div>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>

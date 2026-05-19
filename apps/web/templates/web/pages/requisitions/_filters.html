@@ -1,0 +1,57 @@
+{% comment %}Filtros HTMX — GET web:requisitions_mine, target #requisitions-worklist{% endcomment %}
+<form id="requisitions-filters"
+      hx-get="{{ worklist_url }}"
+      hx-target="#requisitions-worklist"
+      hx-swap="innerHTML"
+      hx-push-url="true"
+      hx-trigger="change from:.filter-control, submit"
+      role="search"
+      aria-label="Filtrar solicitações"
+      class="flex flex-wrap gap-3 items-end">
+
+  <div class="flex-1 min-w-48">
+    <label for="filter-q" class="block text-xs font-medium mb-1" style="color: var(--color-text-secondary);">
+      Busca
+    </label>
+    <input id="filter-q"
+           type="search"
+           name="q"
+           value="{{ q }}"
+           placeholder="Número ou observação…"
+           class="filter-control w-full rounded px-3 py-1.5 text-sm"
+           style="border: 1px solid var(--color-border); background-color: var(--color-surface); color: var(--color-text-primary);"
+           aria-label="Buscar solicitações"
+           autocomplete="off">
+  </div>
+
+  <div class="min-w-40">
+    <label for="filter-status" class="block text-xs font-medium mb-1" style="color: var(--color-text-secondary);">
+      Status
+    </label>
+    <select id="filter-status"
+            name="status"
+            class="filter-control w-full rounded px-3 py-1.5 text-sm"
+            style="border: 1px solid var(--color-border); background-color: var(--color-surface); color: var(--color-text-primary);"
+            aria-label="Filtrar por status">
+      <option value="">Todos</option>
+      {% for value, label in status_choices %}
+      <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {% if q or status_filter %}
+  <div>
+    <a href="{{ worklist_url }}"
+       class="btn btn-ghost btn-sm"
+       hx-get="{{ worklist_url }}"
+       hx-target="#requisitions-worklist"
+       hx-swap="innerHTML"
+       hx-push-url="true"
+       aria-label="Limpar filtros">
+      Limpar
+    </a>
+  </div>
+  {% endif %}
+
+</form>

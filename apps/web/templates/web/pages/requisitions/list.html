@@ -1,0 +1,27 @@
+{% extends "web/layouts/app_shell.html" %}
+
+{% block main %}
+<div class="max-w-4xl mx-auto">
+
+  <header class="mb-6">
+    <h1 class="text-xl font-semibold" style="color: var(--color-text-primary);">
+      Minhas solicitações
+    </h1>
+    <p class="text-sm mt-1" style="color: var(--color-text-muted);">
+      Acompanhe suas solicitações e seu status atual.
+    </p>
+  </header>
+
+  <div class="mb-4">
+    {% include "web/pages/requisitions/_filters.html" %}
+  </div>
+
+  <div id="requisitions-worklist"
+       aria-live="polite"
+       aria-label="Lista de solicitações"
+       aria-atomic="false">
+    {% include "web/pages/requisitions/_list.html" %}
+  </div>
+
+</div>
+{% endblock %}
