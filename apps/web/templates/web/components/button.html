@@ -4,7 +4,7 @@
    class="btn btn-{{ variant|default:'primary' }}{% if size %} btn-{{ size }}{% endif %}{% if disabled %} opacity-50 pointer-events-none{% endif %}"
    {% if id %}id="{{ id }}"{% endif %}
    {% if testid %}data-testid="{{ testid }}"{% endif %}
-   {% if disabled %}aria-disabled="true"{% endif %}>
+   {% if disabled %}aria-disabled="true" tabindex="-1"{% endif %}>
   {% if loading %}
   <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

@@ -40,6 +40,7 @@
        x-transition:leave-end="-translate-x-full"
        class="lg:hidden fixed inset-y-0 left-0 z-50 w-72 flex flex-col"
        style="background-color: var(--color-surface-raised);"
+       id="mobile-nav"
        role="dialog"
        aria-modal="true"
        aria-label="Menu de navegação"
@@ -71,7 +72,7 @@
               class="p-2 rounded"
               style="color: var(--color-text-muted);"
               aria-label="Abrir menu"
-              aria-expanded="false"
+              :aria-expanded="drawerOpen.toString()"
               aria-controls="mobile-nav">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
