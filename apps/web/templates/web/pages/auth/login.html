@@ -7,7 +7,7 @@
 </h2>
 
 {% if auth_error %}
-<div class="mb-7 [&_.alert]:py-2 [&_.alert]:px-3 [&_.alert]:text-sm" aria-live="assertive" aria-atomic="true">
+<div class="mb-4 [&_.alert]:py-2 [&_.alert]:px-3 [&_.alert]:text-sm" aria-live="assertive" aria-atomic="true">
   {% include "web/components/alert.html" with variant="danger" message=auth_error testid="auth-error" %}
 </div>
 {% endif %}
