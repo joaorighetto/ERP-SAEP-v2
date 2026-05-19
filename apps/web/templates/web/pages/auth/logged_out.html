@@ -1,0 +1,26 @@
+{% extends "web/layouts/auth_shell.html" %}
+
+{% block auth_content %}
+
+<div class="text-center py-2">
+
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-4"
+       fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+       style="color: var(--color-text-muted);" aria-hidden="true">
+    <path stroke-linecap="round" stroke-linejoin="round"
+          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+  </svg>
+
+  <h2 class="text-lg font-semibold mb-1" style="color: var(--color-text-primary);">
+    Sessão encerrada
+  </h2>
+  <p class="text-sm mb-6" style="color: var(--color-text-muted);">
+    Você saiu do sistema com segurança.
+  </p>
+
+  {% url 'web:login' as login_url %}
+  {% include "web/components/button.html" with href=login_url label="Entrar novamente" variant="primary" %}
+
+</div>
+
+{% endblock %}
