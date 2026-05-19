@@ -69,6 +69,16 @@ compile:: ## Treat file generation
 	DJANGO_SETTINGS_MODULE=$(DJANGO_SETTINGS_MODULE) $(DJANGO_ADMIN) collectstatic --noinput --clear
 
 # ------------------------------------------------------------------------------
+# Frontend CSS (Tailwind v4)
+# ------------------------------------------------------------------------------
+
+css-build: ## Compilar CSS Tailwind v4 (minificado)
+	npm run css:build
+
+css-dev: ## Compilar CSS Tailwind v4 em modo watch
+	npm run css:dev
+
+# ------------------------------------------------------------------------------
 # Project setup
 # ------------------------------------------------------------------------------
 

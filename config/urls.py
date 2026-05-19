@@ -9,6 +9,7 @@ if settings.DEBUG:
     schema_view_kwargs["permission_classes"] = [AllowAny]
 
 urlpatterns = [
+    path("", include("apps.web.urls")),
     path("admin/", admin.site.urls),
     path("api/v1/", include("apps.users.urls")),
     path("api/v1/", include("apps.materials.urls")),
