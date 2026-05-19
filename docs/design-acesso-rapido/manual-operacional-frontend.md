@@ -817,6 +817,13 @@ Tokens iniciais:
 - `info`;
 - `focus-ring`.
 
+Tipografia oficial (definida no PR1):
+
+| Fonte | Uso |
+|---|---|
+| `Fira Sans` | corpo, UI, labels, headings |
+| `Fira Code` | mono, códigos, números de protocolo |
+
 Semântica:
 
 | Token | Uso |
@@ -1117,12 +1124,13 @@ Não use condicionais de permissão no template para montar menu.
 
 ### 11.1 Papéis e itens esperados
 
-| Papel | Itens esperados |
+| Papel (`PapelChoices`) | Itens esperados |
 |---|---|
-| Solicitante | Nova solicitação, Minhas solicitações |
-| Chefia | Aprovações pendentes, Histórico de aprovações |
-| Almoxarifado | Fila de atendimento, Estoque, Movimentações, Materiais |
-| Admin | Usuários, Permissões, Configurações |
+| `SOLICITANTE` | Nova solicitação, Minhas solicitações |
+| `AUXILIAR_SETOR` | Nova solicitação, Minhas solicitações |
+| `CHEFE_SETOR` | Aprovações pendentes, Histórico de aprovações |
+| `AUXILIAR_ALMOXARIFADO` | Fila de atendimento, Estoque, Movimentações, Materiais |
+| `CHEFE_ALMOXARIFADO` | Fila de atendimento, Estoque, Movimentações, Materiais |
 
 Nomes finais podem seguir domínio real, mas labels devem ser orientados a tarefas. Não use labels técnicos como `Requisitions`, `Stock`, `Users app`, `Materials module`.
 
@@ -1291,7 +1299,7 @@ Teste:
 - `401`, `403`, `409`, `422` quando aplicável;
 - atributos de acessibilidade.
 
-## 13. Auth HTML
+## 13. Auth HTML — PENDENTE (views e templates ainda não implementados)
 
 Login/logout HTML vivem em `apps/web`, usam sessão Django, Django Forms, templates server-rendered, CSRF e componentes oficiais.
 
@@ -1555,9 +1563,17 @@ Caso contrário, Django test client + assertions HTML/HTMX é o mínimo.
 
 ## 17. Sequência de delivery
 
-### 17.1 PR1 — Fundação mínima
+### 17.1 PR1 — Fundação mínima — CONCLUÍDO ([PR #35](https://github.com/JMZR-SAEP/WMS-SAEP/pull/35), 2026-05-19)
 
-PR1 deve criar:
+Decisões registradas:
+
+- Tipografia oficial: `Fira Sans` (corpo/UI) + `Fira Code` (mono) — evita Inter/Roboto genéricos.
+- Paleta: navy `#0F172A` + azul `#0369A1` + `#F8FAFC` fundo — WCAG AAA, governo/institucional.
+- HTMX e Alpine.js via CDN provisório — mover para bundle local ao endurecer CSP.
+- `LOGIN_URL = "/login/"` provisório — auth HTML server-rendered pendente (ver seção 13).
+- 607 → 636 testes (+ 29 de contrato da fundação).
+
+PR1 criou:
 
 - `apps/web`;
 - `apps/web/urls.py`;
@@ -1585,14 +1601,23 @@ PR1 não deve conter:
 - script inline;
 - componente genérico complexo.
 
-### 17.2 PR2 — Primeira jornada real
+### 17.2 PR2 — Primeira jornada real — CONCLUÍDO ([PR #37](https://github.com/JMZR-SAEP/WMS-SAEP/pull/37), 2026-05-19)
 
-PR2 implementa primeira jornada real, recomendada:
+Jornada entregue: `Minhas solicitações` (`web:requisitions_mine`, `/minhas-solicitacoes/`), categoria `mobile-primary`.
 
-- `Minhas solicitações`;
-- categoria `mobile-primary`.
+Artefatos criados:
 
-PR2 deve validar:
+- `apps/requisitions/contexts.py`: presenter `RequisicaoWorklistItem` + builder `build_requisicao_worklist_item`.
+- `apps/web/views/requisitions.py`: `MinhasSolicitacoesView` (GET, thin, `LoginRequiredMixin`).
+- 7 templates em `apps/web/templates/web/pages/requisitions/`.
+- 30 testes de contrato em `tests/web/test_requisitions_mine.py`.
+- 636 → 666 testes totais.
+
+Pendências conhecidas:
+
+- `detail_url=None` e `can_view_detail=False` no presenter — link de detalhe aguarda implementação de `web:requisition_detail`.
+
+PR2 validou:
 
 - shell;
 - navegação por papel;
@@ -1606,12 +1631,12 @@ PR2 deve validar:
 
 Não reabra arquitetura salvo bloqueio real.
 
-### 17.3 Depois de PR1 e PR2
+### 17.3 Depois de PR1 e PR2 (fase atual)
 
 Ordem recomendada:
 
-1. Jornada `mobile-primary` simples.
-2. Jornada com formulário HTMX e `422`.
+1. ~~Jornada `mobile-primary` simples.~~ CONCLUÍDA — PR #37 (`web:requisitions_mine`)
+2. Jornada com formulário HTMX e `422`. ← **próxima**
 3. Jornada com aprovação/rejeição e `403`.
 4. Jornada com conflito de domínio `409`.
 5. Jornada `desktop-optimized` de Almoxarifado.

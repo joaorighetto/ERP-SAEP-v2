@@ -167,12 +167,26 @@ class TestNavegacaoPorPapel:
         content = resp.content.decode()
         assert "Fila de atendimento" in content
 
+    def test_auxiliar_almoxarifado_ve_minhas_solicitacoes(self, client):
+        user = _criar_usuario(papel=PapelChoices.AUXILIAR_ALMOXARIFADO, matricula="99005")
+        client.force_login(user)
+        resp = client.get(reverse("web:home"))
+        content = resp.content.decode()
+        assert "Minhas solicitações" in content
+
     def test_chefe_almoxarifado_ve_fila_atendimento(self, client):
         user = _criar_usuario(papel=PapelChoices.CHEFE_ALMOXARIFADO, matricula="99006")
         client.force_login(user)
         resp = client.get(reverse("web:home"))
         content = resp.content.decode()
         assert "Fila de atendimento" in content
+
+    def test_chefe_almoxarifado_ve_minhas_solicitacoes(self, client):
+        user = _criar_usuario(papel=PapelChoices.CHEFE_ALMOXARIFADO, matricula="99006")
+        client.force_login(user)
+        resp = client.get(reverse("web:home"))
+        content = resp.content.decode()
+        assert "Minhas solicitações" in content
 
     def test_solicitante_nao_ve_fila_atendimento(self, client):
         user = _criar_usuario(papel=PapelChoices.SOLICITANTE, matricula="99007")
