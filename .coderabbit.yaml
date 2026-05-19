@@ -311,117 +311,192 @@ reviews:
         Sinalize qualquer pattern que execute side effects (envio de notificação, chamada
         externa, gravação derivada) dentro de transaction.atomic() em vez de pós-commit.
 
-    - path: "frontend/openapi/schema.json"
+    - path: "apps/web/**/*"
       instructions: >
-        Este arquivo é o contrato vivo entre backend e frontend. Qualquer divergência
-        entre este schema e os endpoints DRF ativos é um bug de contrato.
-        Revise mudanças no schema com foco em: campos removidos ou renomeados que quebram
-        o client TypeScript gerado, alterações de tipo (nullable, array, objeto) sem
-        atualização dos consumers, novos endpoints adicionados ao backend mas ausentes
-        aqui (ou vice-versa) e remoção de operationId que invalide referências tipadas.
-        Sinalize PRs que alterem endpoints Django/DRF sem regenerar este schema
-        (rtk make frontend-gen-api) e qualquer mudança manual neste arquivo que não
-        venha de geração automática.
+        Este app é o frontend server-rendered oficial do WMS-SAEP.
+        Revise contra docs/design-acesso-rapido/manual-operacional-frontend.md.
+        apps/web deve conter composição visual, shell, templates, partials HTMX,
+        assets globais, helpers HTMX, navegação e views HTML finas.
+        Apps de domínio continuam responsáveis por models, forms, selectors,
+        services, policies, validações e context builders.
 
-    - path: "frontend/src/shared/api/**"
-      instructions: >
-        Este pacote é a fronteira de integração entre SPA e backend.
-        client.ts configura o client openapi-fetch tipado; schema.d.ts é gerado — não
-        edite manualmente.
-        Revise: configuração de credentials (include para session auth + CSRF), tratamento
-        de 401 (redirecionar para login sem loop), propagação de CSRF token em mutações,
-        erros tipados com o envelope {"error": {"code","message","details","trace_id"}},
-        ausência de hardcode de URLs base e coerência entre os tipos do schema gerado e
-        o que o backend realmente retorna.
-        Sinalize qualquer swallowing silencioso de erro de rede, retry automático sem
-        idempotência garantida e exposição de dados de um setor para usuário de outro.
+        Trate como regressão arquitetural qualquer regra de negócio, autorização,
+        transição de estado, query complexa, cálculo de saldo, workflow operacional,
+        importação SCPI, auditoria ou validação final de domínio implementada em
+        template, view HTML, Alpine.js, JavaScript ou helper visual de apps/web.
 
-    - path: "frontend/src/features/auth/**"
-      instructions: >
-        Foque em guards de rota, gerenciamento de sessão e redirect pós-login.
-        Regras críticas: guards devem ser a única fonte de verdade para acesso a rotas
-        protegidas; não duplicar lógica de autorização em componentes individuais.
-        Revise: sessão baseada em cookie HttpOnly (não localStorage), verificação de
-        papel/perfil para redirecionamento correto (papel desconhecido → /unknown-role),
-        ausência de dados sensíveis no estado do router, comportamento em tab duplicada
-        (sessão compartilhada via cookie, não memória JS) e logout que invalida sessão
-        no backend antes de limpar estado local.
-        Sinalize qualquer armazenamento de token em localStorage/sessionStorage,
-        verificação de autenticação apenas no cliente sem validação backend e guards
-        que possam ser bypassados por navegação direta.
+        Todo PR frontend deve preencher o Frontend Handoff Contract no PR ou
+        referenciar issue que o contenha. PR frontend sem handoff preenchido é
+        incompleto. O review deve comparar os arquivos alterados com o contrato
+        declarado: tipo de entrega, jornada, categoria responsiva, paths oficiais,
+        contrato HTMX, acessibilidade, segurança, testes e fora de escopo.
 
-    - path: "frontend/src/features/**"
+    - path: "apps/web/views/**/*.py"
       instructions: >
-        Features encapsulam domínio de produto na SPA. Cada feature deve usar o client
-        OpenAPI tipado (nunca fetch/axios direto), delegar mutações ao TanStack Query e
-        nunca acessar store/estado de outra feature diretamente.
-        Revise: coerência entre operações da feature e os endpoints disponíveis no
-        schema.d.ts, ausência de lógica de negócio duplicada do backend (regras de
-        transição de estado, cálculo de saldo e autorização pertencem ao backend),
-        invalidação de cache do TanStack Query após mutações com sucesso, tratamento
-        de estados de loading/error/empty em componentes e acessibilidade básica em
-        elementos interativos.
-        Sinalize features que construam URLs manualmente em vez de usar operationId
-        do client tipado, polling sem cleanup em desmontagem de componente e qualquer
-        dado de domínio computado no frontend que deveria vir do backend.
+        Revise views HTML como camada fina de orquestração server-rendered.
+        Views podem autenticar, chamar selectors/context builders/forms/services do
+        app de domínio, escolher template/partial e montar resposta HTTP segura.
+        Não devem conter regra de negócio, autorização contextual própria,
+        transição de estado, query complexa, mutação operacional, cálculo de saldo,
+        montagem de permissão ou workflow.
 
-    - path: "frontend/src/routes/**"
-      instructions: >
-        Rotas são componentes finos: buscam dados via TanStack Query, aplicam guards
-        e delegam rendering para features.
-        Revise: toda rota protegida deve ter guard explícito no beforeLoad/loader,
-        ausência de lógica de negócio inline (mover para features/), loader que pré-busca
-        dados necessários para evitar waterfall de fetch, tratamento de notFound e
-        errorComponent em rotas que dependem de parâmetros de URL e coerência entre
-        a rota e o contrato de navegação em frontend-arquitetura-piloto.md.
-        Sinalize rotas sem guard que deveriam ser protegidas, parâmetros de rota não
-        validados usados diretamente em queries e qualquer navegação programática que
-        ignore o router (window.location.href).
+        Para HTMX, verifique uso de helpers de apps/web/htmx.py, status HTTP
+        corretos, partial correta, target/swap declarados, tratamento de 401 com
+        HX-Redirect ou HX-Refresh, 403 seguro, 409 para conflito de domínio e 422
+        para formulário inválido. Não aceitar login renderizado dentro de partial
+        operacional nem headers HTMX manuais repetidos sem helper ou justificativa.
 
-    - path: "frontend/src/app/**"
+    - path: "apps/web/htmx.py"
       instructions: >
-        App shell, providers e configuração do router/query-client.
-        Revise: QueryClient com staleTime/gcTime adequados para o padrão de uso (dados
-        de usuário, listas operacionais), configuração de retry que não repita mutações
-        falhas automaticamente, providers na ordem correta (QueryClientProvider antes
-        de RouterProvider), ausência de imports de domínio direto no shell e configuração
-        do router com defaultPreload e errorComponent global.
-        Sinalize qualquer configuração de retry: true no QueryClient para mutações,
-        ausência de Suspense/ErrorBoundary global e imports circulares entre app/ e
-        features/.
+        Este módulo concentra helpers HTMX oficiais.
+        Revise para garantir respostas consistentes para render_htmx,
+        htmx_redirect, htmx_refresh, htmx_trigger, htmx_retarget,
+        htmx_validation_error, htmx_forbidden, htmx_conflict e
+        htmx_session_expired quando existirem.
 
-    - path: "frontend/src/tests/**"
-      instructions: >
-        Foque em cobertura dos contratos críticos da SPA: guards de rota, client API,
-        lógica de feature (SLA, draftSteps, session) e smoke tests de renderização.
-        Testes de unidade devem mockar o client OpenAPI, não fazer fetch real.
-        Testes E2E (Playwright) devem cobrir o caminho feliz de login, criação de
-        requisição e navegação entre papéis.
-        Sinalize testes que dependem de ordem de execução, mocks que não refletem o
-        schema real do backend, ausência de teste para guard de rota crítica e qualquer
-        import de implementação interna em vez de interface pública da feature.
+        Helpers devem padronizar status, headers e comportamento de erro sem
+        acoplar domínio. Sinalize execução de regra operacional, side effects,
+        autorização contextual, renderização de login dentro de partial, 200 para
+        todos os erros, redirects externos não validados e headers construídos de
+        forma insegura.
 
-    - path: "frontend/*.config.{ts,js}"
+    - path: "apps/web/navigation.py"
       instructions: >
-        Arquivos de configuração de build, test e lint do frontend (vite.config.ts,
-        vitest.config.ts, playwright.config.ts, eslint.config.js).
-        Revise: alias de path coerentes com tsconfig, configuração de test environment
-        (jsdom para unit, chromium para e2e), proxy de dev apontando para backend local,
-        ausência de segredos hardcoded, coverage mínimo configurado e regras de lint
-        alinhadas ao projeto (sem console.log, imports não utilizados).
-        Sinalize configuração de proxy que vaze para build de produção, test timeout
-        muito baixo para testes E2E e qualquer plugin de Vite que altere o bundle
-        sem justificativa de performance documentada.
+        Revise navegação por papel como allowlist backend renderizada pelo template.
+        A navegação deve ser montada por função/context builder, usar URLs resolvidas
+        de forma estável e servir tanto desktop quanto mobile com a mesma árvore.
 
-    - path: "frontend/package.json"
+        Template não deve montar menu com ifs de permissão nem receber user/request
+        em include para decidir autorização. Menu não é autorização: toda rota/action
+        protegida deve validar autenticação e permissão no backend. Sinalize itens
+        técnicos como labels operacionais, vazamento de itens entre papéis, active
+        state frágil, query pesada para contador sem decisão explícita e árvore
+        duplicada para mobile.
+
+    - path: "apps/web/templates/**/*.html"
       instructions: >
-        Revise dependências com foco em: versões pinadas ou com range compatível com
-        lockfile (pnpm), ausência de dependências redundantes que dupliquem
-        funcionalidade já fornecida por TanStack Router/Query ou openapi-fetch,
-        scripts npm alinhados aos entrypoints do Makefile (frontend-dev, frontend-build,
-        frontend-test, frontend-e2e, frontend-lint, frontend-gen-api) e devDependencies
-        não vazando para produção.
-        Sinalize upgrades de TanStack Router/Query sem revisão de breaking changes,
-        adição de biblioteca de state management global (Zustand, Redux) sem ADR
-        justificando desvio da arquitetura baseada em TanStack Query e qualquer
-        dependência com vulnerabilidade conhecida.
+        Revise templates Django como camada passiva de apresentação.
+        Templates de página devem ficar em apps/web/templates/web/pages/<jornada>/,
+        partials HTMX junto da jornada como _*.html, layouts em
+        apps/web/templates/web/layouts/ e componentes compartilhados em
+        apps/web/templates/web/components/.
+
+        Templates não devem conter regra de negócio, autorização, query complexa,
+        cálculo de status visual, montagem de navegação, workflow, validação de
+        domínio ou manipulação de saldo/reserva. Devem receber dados simples vindos
+        de context builders/presenters do domínio, como labels, variants, booleans
+        de ação já resolvidos, URLs e mensagens seguras.
+
+        Sinalize templates em apps de domínio, base.html duplicado, shell paralelo,
+        hardcode de paths quando houver rota nomeada, uso de request/user/model/
+        object/queryset/policy em include para decidir comportamento, partial que
+        retorna página completa indevidamente e uso de h1 em partial salvo quando
+        substituir o conteúdo principal.
+
+    - path: "apps/web/templates/web/layouts/**/*.html"
+      instructions: >
+        Revise layouts e shells como estrutura global única do frontend.
+        Deve haver shell consistente com skip link, main id="main-content",
+        regiões globais como global-feedback, global-errors e modal-root quando
+        aplicável, navegação principal acessível e carregamento do CSS compilado
+        oficial em web/dist/app.css.
+
+        Não aceitar shell paralelo por jornada, base.html duplicado, Tailwind CDN,
+        script inline solto, handlers onclick/onchange/onload, ausência de foco
+        visível, ausência de landmarks ou navegação sem aria-label.
+
+    - path: "apps/web/templates/web/components/**/*.html"
+      instructions: >
+        Revise includes oficiais como componentes pequenos, semânticos e com API
+        estreita. Componentes iniciais esperados incluem button.html, badge.html,
+        alert.html, form_field.html, empty_state.html, pagination.html e
+        modal_shell.html.
+
+        Componentes não devem receber user, request, permission, policy, model,
+        object, queryset, raw_html, unsafe_html, script, onclick, onchange, style ou
+        classes arbitrárias sem regra documentada. Devem expor parâmetros simples,
+        estados acessíveis e variantes controladas. Não aceitar table.html ou
+        card.html genéricos no MVP; use recipe ou partial específica de jornada.
+
+    - path: "apps/web/templates/web/pages/**/*.html"
+      instructions: >
+        Revise páginas e partials por jornada.
+        Páginas completas devem usar estrutura oficial, h1 único, main/shell
+        apropriado, estados loading/empty/success/error/permission/conflict quando
+        aplicável e componentes oficiais. Partials HTMX devem ter target estável,
+        swap compatível, feedback e foco declarados no handoff.
+
+        Worklists devem seguir recipe por categoria responsiva: mobile-primary usa
+        cards/lista no mobile e baixa densidade; desktop-optimized pode usar tabela
+        densa e filtros ricos; responsive-neutral mantém padrão simples. Não aceitar
+        UI livre por jornada, status só por cor, erro tratado como vazio, ação
+        destrutiva sem confirmação adequada ou múltiplos botões primários
+        concorrentes.
+
+    - path: "apps/web/static/web/src/styles.css"
+      instructions: >
+        Este é o arquivo oficial de entrada Tailwind CSS v4 CSS-first.
+        Revise @import "tailwindcss", @source para templates autorizados, @theme
+        para tokens visuais e @layer components/@apply apenas para recipes estáveis,
+        repetidas e documentadas.
+
+        Sinalize CSS paralelo por jornada, tokens de status divergentes, classes
+        dinâmicas que o Tailwind não detecta, estética fora da direção visual do
+        manual, perda de foco visível, contraste insuficiente, status dependente só
+        de cor e alteração visual relevante sem atualização do design system quando
+        necessário.
+
+    - path: "apps/web/static/web/dist/app.css"
+      instructions: >
+        Este é artefato compilado do Tailwind e não deve ser editado manualmente.
+        Não faça sugestões de ajuste direto neste arquivo. Se houver problema de
+        estilo, revise a origem em apps/web/static/web/src/styles.css, templates ou
+        scripts de build CSS.
+
+    - path: "apps/web/static/web/js/**/*.js"
+      instructions: >
+        Revise JavaScript como progressive enhancement controlado.
+        JS pode apoiar HTMX, acessibilidade, foco, drawer, modal e estado local
+        pequeno. Não deve conter regra de negócio, autorização, validação final de
+        domínio, workflow, cálculo de saldo, decisão de permissão ou dados sensíveis.
+
+        Sinalize scripts inline soltos, handlers nativos onclick/onchange/onload em
+        templates, chamadas a rotas externas via HTMX, x-html inseguro, JSON manual
+        em template, dependência obrigatória de JS para fluxo que deveria funcionar
+        server-rendered e ausência de fallback seguro.
+
+    - path: "apps/web/tests/**/*.py"
+      instructions: >
+        Revise testes do frontend server-rendered com foco em contrato HTML/HTMX,
+        segurança, acessibilidade e permissões visuais.
+        O mínimo esperado é Django test client com assertions de template correto,
+        página 200 autorizada, partial correta, targets HTMX, hx-* attrs, estados
+        vazio/com dados, ações por permissão, endpoint protegido 403, sessão expirada
+        401 com HX-Redirect/HX-Refresh, validação 422, conflito 409, headers HTMX e
+        atributos acessíveis.
+
+        Playwright é obrigatório quando houver fluxo crítico, modal com submit,
+        HTMX + Alpine.js, múltiplos swaps, atualização parcial de tabela, redirect
+        pós-sucesso, evento HTMX consumido no frontend, aprovação/rejeição,
+        movimentação de estoque, operação destrutiva, mudança de permissão,
+        regressão já identificada ou gate de lançamento.
+
+    - path: "apps/**/templates/**/*.html"
+      instructions: >
+        Templates de página do frontend server-rendered não devem ser criados dentro
+        de apps de domínio. A localização oficial é apps/web/templates/web/.
+        Sinalize novos templates em apps/<domain>/templates/ salvo exceção técnica
+        explicitamente justificada e alinhada ao manual operacional do frontend.
+
+    - path: "apps/**/context.py"
+      instructions: >
+        Revise context builders/presenters de domínio como fronteira entre domínio e
+        apresentação. Eles devem preparar dados simples de UI para apps/web, como
+        labels, status_variant, can_cancel/can_authorize, URLs de actions, textos de
+        empty state, listas autorizadas/paginadas e mensagens seguras.
+
+        Context builders não substituem services ou policies: não devem executar
+        mutações, transições de estado ou side effects. Também não devem expor dados
+        sensíveis ao HTML nem empurrar models/querysets brutos para templates quando
+        o manual exigir view models simples.
+        
