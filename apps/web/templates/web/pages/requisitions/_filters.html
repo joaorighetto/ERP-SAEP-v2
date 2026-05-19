@@ -19,7 +19,7 @@
            value="{{ q }}"
            placeholder="Número ou observação…"
            class="filter-control w-full rounded px-3 py-1.5 text-sm"
-           style="border: 1px solid var(--color-border); background-color: var(--color-surface-raised); color: var(--color-text-primary);"
+           style="border: 1px solid var(--color-border); background-color: var(--color-surface-raised); color: var(--color-text-primary); height: 2.25rem;"
            aria-label="Buscar solicitações"
            autocomplete="off">
   </div>
@@ -31,7 +31,7 @@
     <select id="filter-status"
             name="status"
             class="filter-control w-full rounded px-3 py-1.5 text-sm"
-            style="border: 1px solid var(--color-border); background-color: var(--color-surface-raised); color: var(--color-text-primary);"
+            style="border: 1px solid var(--color-border); background-color: var(--color-surface-raised); color: var(--color-text-primary); height: 2.25rem;"
             aria-label="Filtrar por status">
       <option value="">Todos</option>
       {% for value, label in status_choices %}
