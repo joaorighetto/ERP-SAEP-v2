@@ -1,0 +1,10 @@
+{% comment %}Partial HTMX — target #requisitions-worklist, swap innerHTML{% endcomment %}
+{% if items %}
+  {% include "web/pages/requisitions/_cards.html" %}
+  {% include "web/pages/requisitions/_table.html" %}
+  <div class="mt-4">
+    {% include "web/pages/requisitions/_pagination.html" %}
+  </div>
+{% else %}
+  {% include "web/pages/requisitions/_empty_state.html" %}
+{% endif %}

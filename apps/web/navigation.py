@@ -22,7 +22,7 @@ def build_navigation_for_user(user):
                 },
                 {
                     "label": "Minhas solicitações",
-                    "url": reverse("web:home"),
+                    "url": reverse("web:requisitions_mine"),
                     "icon": "clipboard-list",
                     "key": "requisitions_mine",
                 },
