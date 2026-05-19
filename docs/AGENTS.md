@@ -18,8 +18,8 @@ Em caso de conflito entre síntese rápida e documentação completa, prevalece 
 | Necessidade | Primeira parada | Quando aprofundar |
 |---|---|---|
 | Stack, arquitetura, decisões técnicas | `design-acesso-rapido/stack.md` | Consultar backlog ou documentação completa se a decisão afetar escopo de app, fronteira de domínio ou CI. |
-| Arquitetura da SPA do piloto | `design-acesso-rapido/frontend-arquitetura-piloto.md` | Consultar o ADR em `adr/0001-frontend-piloto-spa-separada.md` quando a dúvida for sobre a decisão macro, trade-offs ou gate do bloco 0. |
-| Comandos e arquivos da fundação da SPA | `design-acesso-rapido/frontend-arquitetura-piloto.md` | Usar quando a tarefa tocar `frontend/`, `frontend/openapi/schema.json`, `src/shared/api/schema.d.ts`, `src/routeTree.gen.ts` ou rotinas `frontend-*` do `Makefile`. |
+| Arquitetura do frontend do piloto | `design-acesso-rapido/frontend-arquitetura-piloto.md` | Consultar o ADR em `adr/0009-frontend-piloto-django-htmx.md` quando a dúvida for sobre a decisão macro, trade-offs ou limites do reset. |
+| Infraestrutura do frontend server-rendered | `design-acesso-rapido/frontend-arquitetura-piloto.md` | Usar quando a tarefa tocar templates, partials HTMX, assets Tailwind/Alpine ou novos comandos operacionais do frontend. |
 | Contratos DRF, erros, paginação, OpenAPI | `design-acesso-rapido/api-contracts.md` | Consultar documentos de domínio quando o endpoint expõe regra crítica. |
 | Invariantes de domínio | `design-acesso-rapido/matriz-invariantes.md` | Consultar `design-acesso-ocasional/modelo-dominio-regras.md`, `processos-almoxarifado.md` e `criterios-aceite.md` para detalhe. |
 | Permissões, papéis e escopos | `design-acesso-rapido/matriz-permissoes.md` | Consultar `design-acesso-ocasional/modelo-dominio-regras.md` e `criterios-aceite.md` quando houver regra contextual por setor, objeto ou estado. |
@@ -29,7 +29,7 @@ Em caso de conflito entre síntese rápida e documentação completa, prevalece 
 | Critérios de aceite | `design-acesso-ocasional/criterios-aceite.md` | Usar para definir testes mínimos e validar comportamento esperado. |
 | Importação SCPI CSV | `design-acesso-ocasional/importacao-scpi-csv.md` | Usar para normalização, prévia, regra tudo ou nada, `QUAN3`, ausentes e divergência crítica. |
 | Planejamento do piloto | `backlog/backlog-tecnico-piloto.md` | Usar para saber o que entra no piloto inicial e o que está fora. |
-| Gate do frontend do piloto | `backlog/backlog-tecnico-piloto.md` | Usar para confirmar o bloco 0 de APIs habilitadoras antes de abrir a frente de SPA. |
+| Gate do frontend do piloto | `backlog/backlog-tecnico-piloto.md` | Usar para confirmar o contrato mínimo antes de abrir a frente server-rendered. |
 | Planejamento do MVP | `backlog/backlog-tecnico-mvp.md` | Usar para rotinas complementares, relatórios, devoluções, saídas excepcionais, estornos e gestão. |
 | Revisão automatizada e guardrails | `code-review-guidelines.md` | Usar antes de review, PR ou mudança que toque invariantes críticos. |
 
@@ -45,8 +45,8 @@ Em caso de conflito entre síntese rápida e documentação completa, prevalece 
 
 - Não leia todos os documentos por padrão; escolha a rota pelo tipo de dúvida.
 - Não use backlog como fonte para contrariar regra de domínio já documentada.
-- Não inicie features da SPA do piloto sem confirmar antes o estado do bloco 0 no backlog e no guia operacional do frontend.
-- Não recrie a fundação da SPA: `frontend/` já existe e deve ser evoluído incrementalmente.
+- Não inicie features do frontend do piloto sem confirmar antes o contrato ativo no backlog e no guia operacional do frontend.
+- Não ressuscite a fundação SPA removida sem nova decisão explícita.
 - Não use síntese rápida para sobrescrever regra mais detalhada em `design-acesso-ocasional/`.
 - Não aceite mudança de contrato HTTP sem atualizar `design-acesso-rapido/api-contracts.md`, testes e OpenAPI quando aplicável.
 - Não aceite mudança de permissão sem revisar `design-acesso-rapido/matriz-permissoes.md`.

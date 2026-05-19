@@ -2,26 +2,38 @@
 
 ## 1. Objetivo
 
-Definir a arquitetura operacional do frontend do piloto do WMS-SAEP, alinhada ao backend Django já existente e ao fluxo real de criação, autorização e atendimento de requisições.
+Definir a arquitetura operacional do frontend do piloto do WMS-SAEP após o abandono da SPA separada, preservando contrato de produto suficiente para orientar as próximas fatias.
 
 Este documento é canônico para:
 
 - stack do frontend;
-- estrutura de pastas;
-- fronteiras entre backend e SPA;
-- bloco 0 de APIs habilitadoras;
-- sequência de implementação;
-- integração com `Makefile`, OpenAPI, seed mínima e CI.
+- escopo ativo do frontend do piloto;
+- fronteiras entre backend, templates e interações HTMX;
+- superfícies de autenticação, rotas e jornadas;
+- worklists, detalhe, formulários e comportamento esperado;
+- sequência de reconstrução, seed mínima e validação operacional.
 
 ## 2. Escopo ativo
 
-O frontend do piloto segue no escopo ativo do projeto, mas está em reset neutro desde a issue #28.
+O frontend do piloto volta a ser server-rendered no próprio Django.
 
-A UI de produto construída antes desse reset foi descartada pela issue #27. O que permanece válido é a infraestrutura técnica da SPA: `frontend/`, Vite, TanStack Router, TanStack Query, client OpenAPI tipado, smoke tests, integração com `Makefile` e contrato de sessão/API.
+Direção vigente:
 
-Até a issue #29 definir design system e layout base, não implementar nem restaurar telas de produto, shell autenticado definitivo, worklists ou fluxos operacionais. A PR #30/auth-shell depende dessa decisão.
+- templates Django como superfície principal;
+- `django-htmx` + HTMX para interações incrementais;
+- Tailwind CSS para styling;
+- Alpine.js apenas quando HTMX sozinho não entregar a interação com simplicidade suficiente.
 
-O objetivo não é abrir uma frente genérica de UI, e sim entregar a interface operacional mínima do piloto para:
+O reset atual descarta a fundação SPA anterior. Não preservar:
+
+- diretório `frontend/`;
+- Vite;
+- React;
+- TanStack Router, Query ou Table;
+- client TypeScript gerado;
+- smoke tests e E2E da SPA.
+
+O objetivo não é abrir uma frente genérica de UI. O frontend do piloto existe para a interface operacional mínima de:
 
 - solicitante;
 - auxiliar de setor;
@@ -29,89 +41,60 @@ O objetivo não é abrir uma frente genérica de UI, e sim entregar a interface 
 - auxiliar de Almoxarifado;
 - chefe de Almoxarifado.
 
-O `superusuário` permanece fora do foco da SPA no primeiro corte, usando admin e superfícies técnicas já existentes.
+O `superusuário` permanece fora do foco da interface operacional do piloto, usando admin e superfícies técnicas já existentes.
 
 ## 3. Princípios
 
-- SPA separada em `frontend/`, no mesmo repositório.
-- Backend Django continua dono do domínio, autenticação, autorização e OpenAPI.
-- Frontend só avança de verdade após o bloco 0 de APIs habilitadoras.
-- UX orientada a worklists, não CRUD genérico.
-- Linguagem canônica do domínio preservada na UI, com microcopy pedagógica quando necessário.
-- Abstração mínima: abstrair só depois do segundo uso real.
-- Validação local no frontend serve à UX; domínio e concorrência continuam no backend.
+- Backend Django continua dono do domínio, autenticação, autorização e contratos.
+- HTMX deve ser a primeira escolha para interações parciais.
+- Alpine.js entra só para estado local pequeno, toggle, disclosure, modal simples ou comportamento efêmero similar.
+- Não criar uma mini-SPA escondida dentro de templates.
+- Linguagem canônica do domínio deve permanecer na interface.
+- Regras de negócio continuam no backend.
+- UX do piloto segue orientada a worklists, não CRUD genérico.
+- Validação local serve à UX; domínio e concorrência continuam no backend.
 - Tema claro único, PT-BR, desktop-first com responsividade funcional.
 
 ## 4. Stack
 
-- `React`
-- `TypeScript`
-- `Vite`
-- `TanStack Query`
-- `TanStack Router`
-- `TanStack Table`
-- `React Hook Form`
-- `Zod`
-- `openapi-typescript`
-- `openapi-fetch`
-- `Tailwind CSS`
-- `shadcn/ui`
-- `Radix UI`
-- `Playwright`
-- `pnpm`
+- Django templates
+- `django-htmx`
+- HTMX
+- Tailwind CSS
+- Alpine.js
+- sessão Django com CSRF
 
-## 5. Estrutura de pastas
+Referências externas de implementação:
 
-```text
-frontend/
-  openapi/
-    schema.json
-  tests/
-    e2e/
-  package.json
-  tsr.config.json
-  tsconfig.json
-  vite.config.ts
-  vitest.config.ts
-  playwright.config.ts
-  src/
-    app/
-      layouts/
-      providers/
-      router.tsx
-    routes/
-    routeTree.gen.ts
-    shared/
-      api/
-        schema.d.ts
-      auth/
-      config/
-      lib/
-      ui/
-    features/
-      auth/
-      materials/
-      requisitions/
-      approvals/
-      fulfillment/
-    tests/
-```
+- `django-htmx`: instalar pacote, registrar `django_htmx`, usar `django_htmx.middleware.HtmxMiddleware`, incluir `{% htmx_script %}` no template base e enviar CSRF em requests HTMX.
+- Tailwind CSS: tratar como toolchain de build-time, com classes detectadas por varredura dos templates reais do projeto.
+- Alpine.js: usar `x-data`, `x-show`, `x-cloak` e `Alpine.data(...)` apenas para estado local pequeno e reutilizável.
+
+## 5. Estrutura esperada
+
+Estrutura-alvo em alto nível:
+
+- templates Django para páginas completas;
+- partials HTMX para listas, filtros, trechos de detalhe, ações inline e fragmentos pós-submit;
+- assets compartilhados para base visual, HTMX e Alpine;
+- views server-rendered finas, chamando os mesmos services e policies do backend;
+- APIs DRF preservadas quando já forem contrato útil para backend/frontend, integrações ou superfícies futuras.
 
 Regras:
 
-- `routes/` orquestra páginas, search params, loaders e guards.
-- `features/` concentra blocos de domínio e fluxos.
-- `shared/` contém apenas primitives transversais.
-- `routeTree.gen.ts` e `shared/api/schema.d.ts` são artefatos gerados; não editar manualmente.
-- qualquer artefato que “conhece” requisição, autorização ou atendimento pertence a feature, não a `shared`.
+- tela completa e navegação principal são responsabilidade de templates server-rendered;
+- partial HTMX não duplica regra de domínio;
+- estado efêmero local pequeno pode viver em Alpine.js;
+- qualquer comportamento que conheça requisição, autorização ou atendimento pertence ao módulo/domínio correspondente, não a um helper genérico opaco.
 
 ## 6. Auth e sessão
 
 - autenticação por sessão Django com CSRF;
-- frontend opera com um único `papel` operacional principal por usuário no piloto atual;
-- `GET /api/v1/auth/me/` é a base para home, menu e guards;
-- capacidades no frontend são derivadas do `papel`;
-- sessão expirada deve gerar fluxo estrito: aviso + redirecionamento para login.
+- frontend opera com um único `papel operacional principal` por usuário no piloto atual;
+- `GET /api/v1/auth/me/` continua sendo a base canônica para derivar capacidades e papel;
+- HTMX deve enviar `x-csrftoken`;
+- sessão expirada deve redirecionar para login ou responder fragmento de erro apropriado ao contexto HTMX;
+- capacidades no frontend continuam derivadas do `papel`.
 
 Superfície esperada:
 
@@ -122,33 +105,34 @@ Superfície esperada:
 
 ## 7. Rotas e jornadas
 
-Rotas públicas da SPA:
+Rotas/telas canônicas do piloto:
 
 - `/login`
 - `/minhas-requisicoes`
 - `/requisicoes/nova`
-- `/requisicoes/:id`
+- `/requisicoes/{id}`
 - `/autorizacoes`
 - `/atendimentos`
-- `/unknown-role`
+- superfície explícita para papel desconhecido ou desalinhamento de contrato/cadastro
 
 Regras:
 
-- as rotas documentadas permanecem disponíveis no reset neutro;
-- o comportamento de produto anterior dessas rotas está descartado;
-- durante o reset, cada rota preservada deve renderizar título + `Interface do piloto em reconstrucao.`;
-- novas rotas de produto só entram após decisão de design system/layout da issue #29;
-- enquanto isso, qualquer rota preservada deve ser neutra, técnica e sem assumir navegação operacional final.
+- login é server-rendered e pode usar HTMX para submit/feedback sem virar fluxo client-heavy;
+- `Minhas requisições` é a lista de trabalho pessoal do usuário;
+- `Nova requisição` e edição de rascunho compartilham a mesma estrutura-base;
+- detalhe de requisição é canônico e muda ações conforme contexto;
+- `Autorizações` e `Atendimentos` são worklists especializadas, não variantes cosméticas da mesma lista;
+- papel desconhecido não deve gerar loop de login e deve explicitar desalinhamento de contrato/cadastro.
 
 Homes por papel:
 
-- não há home operacional vigente;
-- qualquer redirecionamento pós-login deve permanecer neutro até a issue #29;
-- papel desconhecido deve continuar sem loop de login e explicitar desalinhamento de contrato/cadastro.
+- não há dashboard genérico obrigatório;
+- o redirecionamento pós-login deve levar o usuário para a worklist mais útil ao seu papel;
+- qualquer fallback neutro deve ser transitório e explícito.
 
-## 8. Bloco 0 de APIs habilitadoras
+## 8. Bloco 0 e superfícies habilitadoras
 
-O frontend do piloto fica bloqueado até concluir:
+Antes de implementar as telas operacionais do frontend, o backend deve entregar:
 
 1. Auth/sessão:
    - `GET /api/v1/auth/csrf/`
@@ -161,8 +145,8 @@ O frontend do piloto fica bloqueado até concluir:
    - `GET /api/v1/requisitions/`
    - `GET /api/v1/requisitions/mine/`
    - `GET /api/v1/requisitions/{id}/`
-4. Update de rascunho:
-   - ação/endpoint explícito de atualização por substituição completa do rascunho
+4. Update explícito de rascunho:
+   - operação de atualização por substituição completa do rascunho
 
 Regras complementares:
 
@@ -171,46 +155,27 @@ Regras complementares:
 - retorno curto, sem paginação;
 - só usuários ativos e aptos ao fluxo;
 - `GET /api/v1/requisitions/` continua representando visibilidade operacional ampla;
-- `GET /api/v1/requisitions/mine/` alimenta `Minhas requisições` e deve retornar:
-  - em `rascunho`: apenas requisições com `criador_id = user.id`;
-  - fora de `rascunho`: requisições com `criador_id = user.id OR beneficiario_id = user.id`;
-- ambas as listas devem ser paginadas e ter busca textual simples + filtro por status quando expostas à SPA;
+- `GET /api/v1/requisitions/mine/` alimenta `Minhas requisições`;
+- ambas as listas devem suportar paginação, busca textual simples e filtro por status quando expostas na interface;
 - lista de requisições usa serializer próprio e mais leve que o detalhe.
 
-## 9. Sequência de implementação
+## 9. Sequência de reconstrução
 
-Sequência histórica planejada antes do reset neutro. Após a issue #28, ela deixa de autorizar implementação de produto até a issue #29 fechar design system e layout base.
-
-1. Bloco 0 de backend
-2. Fundação do frontend:
-   - `frontend/`
-   - Vite
-   - providers
-   - router
-   - client OpenAPI
-   - layout base
-   - integração com `Makefile`
-3. Login e sessão atual
-4. `Minhas requisições`
-5. `Nova requisição` + salvar rascunho + editar rascunho + enviar para autorização
-6. `Fila de autorizações` + autorização total/parcial + recusa
-7. `Fila de atendimento` + atendimento total/parcial + cancelamento operacional permitido
-8. Notificações como segunda onda
-
-Estado atual após o reset neutro da issue #28:
-
-- bloco 0 de backend concluído;
-- infraestrutura técnica `frontend/` preservada;
-- UI de produto anterior descartada;
-- contrato atual de rota é neutro: as rotas documentadas continuam acessíveis e exibem título + `Interface do piloto em reconstrucao.`;
-- PR #30/auth-shell bloqueada até a issue #29 fechar design system e layout base.
+1. Definir base de templates, layout, assets e barra de navegação/autenticação.
+2. Integrar `django-htmx`.
+3. Integrar pipeline de Tailwind CSS.
+4. Introduzir Alpine.js apenas onde houver lacuna real de UX.
+5. Reconstruir `Minhas requisições` + detalhe canônico.
+6. Reconstruir criação/edição de rascunho + envio.
+7. Reconstruir fila de autorizações.
+8. Reconstruir fila de atendimento.
+9. Tratar notificações e refinamentos como segunda onda.
 
 ## 10. Worklists e detalhe
 
-Contrato-alvo de produto temporariamente suspenso pelo reset neutro: decisões de design, layout e validação de requisitos dependem da resolução da issue `#29`.
-
 ### Minhas requisições
 
+- todos papéis podem acessar;
 - lista única;
 - consome `GET /api/v1/requisitions/mine/`, não a lista operacional ampla;
 - mostrar `numero_publico` ou badge `Rascunho`;
@@ -224,24 +189,24 @@ Contrato-alvo de produto temporariamente suspenso pelo reset neutro: decisões d
 
 - worklist especializada;
 - ordenação por mais antigas pendentes primeiro;
-- detalhe abre em `/requisicoes/:id?contexto=autorizacao`;
-- ação rápida: `Autorizar tudo como solicitado`.
+- detalhe abre em contexto de autorização;
+- ação rápida esperada: `Autorizar tudo como solicitado`.
 
 ### Fila de atendimento
 
 - worklist especializada;
 - ordenação por mais antigas autorizadas primeiro;
-- detalhe abre em `/requisicoes/:id?contexto=atendimento`;
-- ação rápida: `Preencher entrega completa`.
+- detalhe abre em contexto de atendimento;
+- ação rápida esperada: `Preencher entrega completa`.
 
 ### Detalhe canônico
 
 - cabeçalho comum;
 - corpo comum com itens, status e resumo de eventos;
-- bloco de ações muda conforme `contexto`;
+- bloco de ações muda conforme contexto;
 - quando a requisição estiver em `rascunho`, pode reutilizar os mesmos blocos centrais da montagem/edição de rascunho.
 
-## 11. Formulários e tabelas
+## 11. Formulários e comportamento
 
 - criação e edição de rascunho usam a mesma tela;
 - atualização de rascunho é por substituição completa;
@@ -252,56 +217,24 @@ Contrato-alvo de produto temporariamente suspenso pelo reset neutro: decisões d
   - recusar
   - atender
   - cancelar requisição autorizada
-- tabelas usam `TanStack Table`;
-- itens mostram `quantidade_solicitada`, `quantidade_autorizada` e `quantidade_entregue` com apresentação contextual;
+- tabelas/listas devem destacar `quantidade_solicitada`, `quantidade_autorizada` e `quantidade_entregue` com apresentação contextual;
 - divergências entre quantidades devem ser destacadas visualmente;
-- justificativas parciais aparecem inline de forma compacta.
+- justificativas parciais devem aparecer inline de forma compacta;
+- HTMX deve ser preferido para filtros, reload de listas, submit parcial e feedback de ações;
+- Alpine.js só deve assumir toggle, disclosure, modal simples, tabs simples ou estado efêmero similar.
 
-## 12. Makefile e operações
-
-O `frontend/` usa `pnpm`, mas o ponto de entrada operacional do repo deve passar pelo `Makefile`.
-
-Rotinas previstas:
-
-- `make frontend-init`
-- `make frontend-dev`
-- `make frontend-build`
-- `make frontend-lint`
-- `make frontend-test`
-- `make frontend-e2e`
-- `make frontend-gen-api`
-- `make seed-pilot-minimo`
-
-Significado operacional:
-
-- `make frontend-init`: instala dependências `pnpm` da SPA e prepara Chromium do Playwright;
-- `make frontend-gen-api`: exporta `frontend/openapi/schema.json` com `drf-spectacular` e regenera `src/shared/api/schema.d.ts`;
-- `make frontend-dev`: sobe a SPA local em `127.0.0.1:4173`;
-- `make frontend-build`: executa `frontend-gen-api` e gera o build;
-- `make frontend-lint`: executa `frontend-gen-api`, lint e typecheck;
-- `make frontend-test`: executa `frontend-gen-api` e smoke tests com Vitest;
-- `make frontend-e2e`: executa `frontend-gen-api`, aplica `seed-pilot-minimo` e roda E2E real com Playwright contra backend Django + SPA Vite, sem mocks HTTP.
-
-## 13. OpenAPI
-
-- o backend exporta o schema para arquivo;
-- o frontend consome `frontend/openapi/schema.json`;
-- os tipos TS gerados vivem em `frontend/src/shared/api/schema.d.ts`;
-- geração de tipos não deve depender do endpoint HTTP `/api/v1/schema/` em runtime de build;
-- arquivos gerados não devem ser editados manualmente.
-
-## 14. Seed mínima
+## 12. Seed mínima e operação local
 
 Deve existir um comando oficial de backend para popular o cenário mínimo do piloto:
 
-- nome proposto: `seed_pilot_minimo`
-- exposto por `make seed-pilot-minimo`
+- nome canônico: `seed_pilot_minimo`
+- exposto por `rtk make seed-pilot-minimo`
 
 Conteúdo mínimo:
 
-- usuários operacionais principais
-- 1 usuário inativo apenas para autenticação
-- setores coerentes
+- usuários operacionais principais;
+- 1 usuário inativo apenas para autenticação;
+- setores coerentes;
 - materiais:
   - ativo com saldo confortável
   - ativo com saldo baixo
@@ -314,34 +247,25 @@ Conteúdo mínimo:
   - atendida parcialmente
   - ao menos uma criada para terceiro
 
-Essa seed é base oficial tanto para validação manual quanto para Playwright local.
-
 Fluxo operacional esperado no ambiente efêmero:
 
 - rodar `rtk make setup`
 - rodar `rtk make seed-pilot-minimo`
-- usar esse mesmo cenário como baseline para validação manual local e para E2E com Playwright
+- usar esse mesmo cenário como baseline para validação manual local
 
-## 15. CI
+## 13. Validação e checks
 
-Entrada em duas fases:
+Enquanto a nova infraestrutura server-rendered não ganhar suite própria, o mínimo esperado é:
 
-### Fase 1
+- checks backend existentes continuam obrigatórios;
+- cada nova fatia do frontend deve introduzir seus próprios testes e evidências;
+- validação manual deve usar a seed mínima oficial do piloto;
+- mudanças de contrato continuam exigindo atualização de OpenAPI, testes e documentação.
 
-Implementada no workflow `CI`, job `frontend`:
+## 14. Guardrails
 
-- instalar dependências do frontend
-- gerar tipos OpenAPI
-- lint
-- build
-- não roda Playwright
-
-### Fase 2
-
-Escopo da issue #43:
-
-- job separado no workflow `CI` (`frontend-e2e`)
-- subir Postgres + backend Django + SPA Vite
-- carregar `seed_pilot_minimo`
-- rodar Playwright real serializado (`workers: 1`, Chromium, `trace: on-first-retry`)
-- publicar `frontend/playwright-report/` e traces quando falhar/cancelar
+- Não recriar `frontend/` sem nova decisão explícita.
+- Não mover regra de negócio para JavaScript.
+- Não introduzir Alpine.js para fluxos que podem ser resolvidos por HTMX + HTML sem perda relevante.
+- Não manter documentação ativa apontando para React/Vite/TanStack como stack vigente.
+- Não tratar o admin do Django como substituto da interface operacional do piloto.

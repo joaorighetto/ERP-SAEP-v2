@@ -25,14 +25,9 @@ ENV_EXAMPLE_FILE ?= .env.example
 PID_FILE ?= .pid
 PSQL ?= psql
 UV ?= uv
-PNPM ?= npx --yes pnpm@10.15.1
-
 PYTHON ?= $(UV) run python
 MANAGE_PY ?= manage.py
 DJANGO_ADMIN ?= $(PYTHON) $(MANAGE_PY)
-FRONTEND_DIR ?= frontend
-FRONTEND_SCHEMA_FILE ?= $(FRONTEND_DIR)/openapi/schema.json
-FRONTEND_DEPS_STAMP ?= $(FRONTEND_DIR)/node_modules/.modules.yaml
 
 DJANGO_SETTINGS_MODULE ?= config.settings.dev
 TEST_SETTINGS_MODULE ?= config.settings.test
@@ -128,42 +123,5 @@ resetdb: resetpostgres ## Recriar schema do banco do zero sem apagar migrations 
 run: ## Subir servidor de desenvolvimento
 	DJANGO_SETTINGS_MODULE=$(DJANGO_SETTINGS_MODULE) $(DJANGO_ADMIN) runserver
 
-$(FRONTEND_DEPS_STAMP): $(FRONTEND_DIR)/package.json $(FRONTEND_DIR)/pnpm-lock.yaml
-	@test -d $(FRONTEND_DIR) || (echo "Diretório $(FRONTEND_DIR) não encontrado" && exit 1)
-	cd $(FRONTEND_DIR) && $(PNPM) install
-	touch $(FRONTEND_DEPS_STAMP)
-
-frontend-deps: $(FRONTEND_DEPS_STAMP) ## Instalar dependências do frontend quando necessário
-	@test -d $(FRONTEND_DIR) || (echo "Diretório $(FRONTEND_DIR) não encontrado" && exit 1)
-
-frontend-init: frontend-deps ## Instalar dependências do frontend e preparar Playwright
-	@test -d $(FRONTEND_DIR) || (echo "Diretório $(FRONTEND_DIR) não encontrado" && exit 1)
-	cd $(FRONTEND_DIR) && ./node_modules/.bin/playwright install chromium webkit
-
-frontend-gen-api: frontend-deps ## Exportar OpenAPI do backend e regenerar tipos do frontend
-	@test -d $(FRONTEND_DIR) || (echo "Diretório $(FRONTEND_DIR) não encontrado" && exit 1)
-	mkdir -p $(FRONTEND_DIR)/openapi
-	DJANGO_SETTINGS_MODULE=$(DJANGO_SETTINGS_MODULE) $(DJANGO_ADMIN) spectacular --format openapi-json --file $(FRONTEND_SCHEMA_FILE)
-	cd $(FRONTEND_DIR) && ./node_modules/.bin/openapi-typescript ./openapi/schema.json -o ./src/shared/api/schema.d.ts
-
-frontend-dev: ## Subir SPA do piloto em modo desenvolvimento
-	@test -d $(FRONTEND_DIR) || (echo "Diretório $(FRONTEND_DIR) não encontrado" && exit 1)
-	@test -d $(FRONTEND_DIR)/node_modules || (echo "node_modules não encontrado em $(FRONTEND_DIR). Execute 'rtk make frontend-init' primeiro." && exit 1)
-	cd $(FRONTEND_DIR) && ./node_modules/.bin/vite --host 127.0.0.1 --port 4173
-
-frontend-build: frontend-gen-api ## Gerar build de produção da SPA do piloto
-	cd $(FRONTEND_DIR) && ./node_modules/.bin/tsc -b
-	cd $(FRONTEND_DIR) && ./node_modules/.bin/vite build
-
-frontend-lint: frontend-gen-api ## Rodar lint e typecheck do frontend
-	cd $(FRONTEND_DIR) && ./node_modules/.bin/eslint . --max-warnings=0
-	cd $(FRONTEND_DIR) && ./node_modules/.bin/tsc -b
-
-frontend-test: frontend-gen-api ## Rodar smoke tests unitários/integration do frontend
-	cd $(FRONTEND_DIR) && ./node_modules/.bin/vitest run
-
-frontend-e2e: frontend-gen-api resetdb seed-pilot-minimo ## Rodar E2E real do frontend com Playwright + backend seedado
-	cd $(FRONTEND_DIR) && ./node_modules/.bin/playwright test
-
-.PHONY: help prepare init setup clean cleanall veryclean test seed-pilot-minimo resetdb run resetpostgres frontend-deps frontend-init frontend-gen-api frontend-dev frontend-build frontend-lint frontend-test frontend-e2e
+.PHONY: help prepare init setup clean cleanall veryclean test seed-pilot-minimo resetdb run resetpostgres
 .EXPORT_ALL_VARIABLES:
