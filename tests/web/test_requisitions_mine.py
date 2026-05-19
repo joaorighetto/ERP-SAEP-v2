@@ -345,3 +345,22 @@ class TestPaginacao:
         client.force_login(u)
         resp = client.get(_url())
         assert 'data-testid="requisitions-pagination"' not in resp.content.decode()
+
+    def test_paginacao_hx_get_preserva_filtro_status(self):
+        client = Client()
+        u = _user("88031")
+        for i in range(22):
+            _requisicao(u, status=StatusRequisicao.RASCUNHO)
+        client.force_login(u)
+        resp = client.get(_url(), {"status": StatusRequisicao.RASCUNHO})
+        content = resp.content.decode()
+        assert 'data-testid="requisitions-pagination"' in content
+        assert f"status={StatusRequisicao.RASCUNHO}" in content
+
+    def test_filtro_busca_valor_preservado_no_input(self):
+        client = Client()
+        u = _user("88032")
+        client.force_login(u)
+        resp = client.get(_url(), {"q": "teste"})
+        content = resp.content.decode()
+        assert 'value="teste"' in content
