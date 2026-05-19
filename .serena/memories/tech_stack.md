@@ -48,7 +48,7 @@ Backend module structure:
 Port/Adapter pattern (ADR 0002 — Accepted):
 - `StockPort` (Protocol): `apps/requisitions/ports.py`.
 - `StockAdapter` (implementation): `apps/stock/adapters.py`.
-- No direct requisitions <- stock circular dependency.
+- No direct requisitions <- stock circular dependency.
 
 Initial settings are `config.settings.base`, `config.settings.dev`, and `config.settings.test`; do not create a separate `test_postgres` settings module.
 - PostgreSQL is configured through `DATABASE_URL`; no Docker Compose or production settings are part of the active baseline.

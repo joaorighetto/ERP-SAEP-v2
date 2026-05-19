@@ -30,7 +30,7 @@
 
 ## Files touched
 
-```
+```text
 # Novos
 apps/web/__init__.py
 apps/web/apps.py

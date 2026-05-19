@@ -89,7 +89,7 @@ Antes de concluir:
 | Worklists | Recipe por categoria | Não criar `table.html` genérico nem UI livre por jornada |
 | Auth | Login/logout HTML em `apps/web` | Não consumir API DRF auth via HTMX como padrão |
 | Acessibilidade | Contrato obrigatório | Declare foco, `aria-live`, labels, erros e testes |
-| Segurança | Secure defaults | Sem inline script, sem `|safe`, CSRF obrigatório, redirects internos validados |
+| Segurança | Secure defaults | Sem inline script, sem `\|safe`, CSRF obrigatório, redirects internos validados |
 | Testes | Django client + HTML/HTMX | Playwright só em fluxo crítico ou gate |
 | Delivery | PR1 fundação, PR2 primeira jornada | Não iniciar jornada antes da fundação mínima |
 
