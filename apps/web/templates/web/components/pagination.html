@@ -1,14 +1,4 @@
-{#
-  pagination.html — Navegação de páginas acessível
-
-  Parâmetros:
-    page_obj   (Page Django) — objeto de paginação
-    request    (HttpRequest) — para preservar query params
-    testid     (str) — data-testid
-
-  Estado atual, anterior/próximo claros. Preserva filtros.
-  Não depende apenas de ícones.
-#}
+<!-- pagination.html: page_obj (Django Page), request (for query param preservation) -->
 {% if page_obj and page_obj.paginator.num_pages > 1 %}
 <nav aria-label="Paginação"
      class="flex items-center justify-between py-3"

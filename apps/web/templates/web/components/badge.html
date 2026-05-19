@@ -1,14 +1,4 @@
-{#
-  badge.html — Status, estados e classificações curtas
-
-  Parâmetros:
-    label    (str, obrigatório) — texto do badge (sempre textual, não só cor)
-    variant  (str) — neutral | info | success | warning | danger (default: neutral)
-    testid   (str) — data-testid
-
-  Mapeamento status → variante deve ocorrer no context builder, não aqui.
-  Proibido: user, request, permission, policy, model, object, queryset
-#}
+<!-- badge.html: variant=neutral|info|success|warning|danger -->
 <span class="badge badge-{{ variant|default:'neutral' }}"
       {% if testid %}data-testid="{{ testid }}"{% endif %}>
   {{ label }}

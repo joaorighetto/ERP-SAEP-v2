@@ -1,27 +1,4 @@
-{#
-  button.html — Ação clicável consistente e acessível
-
-  Parâmetros:
-    label      (str, obrigatório) — texto visível do botão
-    variant    (str) — primary | secondary | outline | ghost | danger (default: primary)
-    size       (str) — sm | md | lg (omitir para md)
-    type       (str) — button | submit | reset (default: button)
-    href       (str) — se definido, renderiza <a> em vez de <button>
-    disabled   (bool) — desabilita o botão
-    loading    (bool) — estado de carregamento (bloqueia duplo submit)
-    id         (str) — atributo id
-    name       (str) — atributo name
-    value      (str) — atributo value
-    testid     (str) — data-testid para testes
-    hx_get     (str) — hx-get
-    hx_post    (str) — hx-post
-    hx_target  (str) — hx-target
-    hx_swap    (str) — hx-swap
-    hx_confirm (str) — hx-confirm
-    hx_trigger (str) — hx-trigger
-
-  Proibido: user, request, permission, policy, model, object, queryset
-#}
+<!-- button.html: variant=primary|secondary|outline|ghost|danger, size=sm|md|lg, type=button|submit|reset, href, disabled, loading, hx_get/post/target/swap/confirm/trigger -->
 {% if href %}
 <a href="{{ href }}"
    class="btn btn-{{ variant|default:'primary' }}{% if size %} btn-{{ size }}{% endif %}{% if disabled %} opacity-50 pointer-events-none{% endif %}"

@@ -1,13 +1,4 @@
-{#
-  form_field.html — Campo com label, help text, erro e acessibilidade
-
-  Parâmetros:
-    field      (BoundField Django, obrigatório) — campo do Django Form
-    testid     (str) — data-testid
-
-  Acessibilidade: label, aria-invalid, aria-describedby, erro associado.
-  Proibido: user, request, permission, policy, model, object, queryset
-#}
+<!-- form_field.html: field (Django BoundField), aria-invalid, aria-describedby handled automatically -->
 {% with field_id=field.id_for_label field_errors=field.errors %}
 <div class="space-y-1.5" {% if testid %}data-testid="{{ testid }}"{% endif %}>
 

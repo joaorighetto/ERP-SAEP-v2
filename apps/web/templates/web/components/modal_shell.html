@@ -1,18 +1,4 @@
-{#
-  modal_shell.html — Estrutura acessível para modais
-
-  Parâmetros:
-    modal_id    (str, obrigatório) — ID único do modal (usado para aria)
-    title       (str, obrigatório) — título acessível do modal
-    size        (str) — sm | md | lg (default: md)
-    testid      (str) — data-testid
-
-  Uso: incluir dentro de #modal-root via HTMX swap.
-  Alpine.js controla abertura, fechamento e foco. Não contém regra de negócio.
-
-  Acessibilidade: role="dialog", aria-modal, aria-labelledby, foco inicial, retorno de foco, Escape.
-  Proibido: user, request, permission, policy, model, object, queryset
-#}
+<!-- modal_shell.html: modal_id (required), title (required), size=sm|md|lg. Requires Alpine.js x-trap. -->
 {% with _size=size|default:"md" modal_label_id=modal_id|add:"-title" %}
 <div id="{{ modal_id }}"
      role="dialog"
