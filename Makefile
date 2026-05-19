@@ -133,5 +133,5 @@ resetdb: resetpostgres ## Recriar schema do banco do zero sem apagar migrations 
 run: ## Subir servidor de desenvolvimento
 	DJANGO_SETTINGS_MODULE=$(DJANGO_SETTINGS_MODULE) $(DJANGO_ADMIN) runserver
 
-.PHONY: help prepare init setup clean cleanall veryclean test seed-pilot-minimo resetdb run resetpostgres
+.PHONY: help prepare init setup clean veryclean test seed-pilot-minimo resetdb run resetpostgres css-build css-dev
 .EXPORT_ALL_VARIABLES:

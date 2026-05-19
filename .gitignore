@@ -8,6 +8,7 @@ venv/
 *.egg-info/
 /dist/
 /build/
+apps/web/static/web/dist/
 
 # Django
 *.log
