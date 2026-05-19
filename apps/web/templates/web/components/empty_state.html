@@ -1,0 +1,48 @@
+{#
+  empty_state.html — Estado vazio consistente
+
+  Parâmetros:
+    title      (str, obrigatório) — título do estado vazio
+    message    (str) — descrição opcional
+    variant    (str) — default | filtered | permission (default: default)
+    action_label (str) — label do botão de ação
+    action_url   (str) — URL do botão de ação
+    testid     (str) — data-testid
+
+  Não esconder erro como vazio.
+  Diferenciar vazio real de filtro sem resultado.
+  Proibido: user, request, permission, policy, model, object, queryset
+#}
+<div class="flex flex-col items-center justify-center py-16 px-4 text-center"
+     {% if testid %}data-testid="{{ testid }}"{% endif %}>
+
+  <div class="h-12 w-12 rounded-full flex items-center justify-center mb-4"
+       style="background-color: var(--color-surface-muted);">
+    {% if variant == "filtered" %}
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="color: var(--color-text-muted);">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+    </svg>
+    {% elif variant == "permission" %}
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="color: var(--color-text-muted);">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+    </svg>
+    {% else %}
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" style="color: var(--color-text-muted);">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    {% endif %}
+  </div>
+
+  <h3 class="text-sm font-semibold" style="color: var(--color-text-primary);">{{ title }}</h3>
+
+  {% if message %}
+  <p class="mt-1 text-sm max-w-sm" style="color: var(--color-text-muted);">{{ message }}</p>
+  {% endif %}
+
+  {% if action_label and action_url %}
+  <div class="mt-4">
+    {% include "web/components/button.html" with label=action_label href=action_url variant="primary" size="sm" %}
+  </div>
+  {% endif %}
+
+</div>
