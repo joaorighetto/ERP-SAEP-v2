@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "Django>=6.0,<7",
+    "django-htmx>=1.22,<2",
     "django-allauth>=65,<66",
     "django-cors-headers>=4.9,<5",
     "django-filter>=25,<26",
