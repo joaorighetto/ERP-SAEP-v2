@@ -160,6 +160,13 @@ class TestNavegacaoPorPapel:
         content = resp.content.decode()
         assert "Aprovações pendentes" in content
 
+    def test_chefe_setor_ve_minhas_solicitacoes(self, client):
+        user = _criar_usuario(papel=PapelChoices.CHEFE_SETOR, matricula="99004")
+        client.force_login(user)
+        resp = client.get(reverse("web:home"))
+        content = resp.content.decode()
+        assert "Minhas solicitações" in content
+
     def test_auxiliar_almoxarifado_ve_fila_atendimento(self, client):
         user = _criar_usuario(papel=PapelChoices.AUXILIAR_ALMOXARIFADO, matricula="99005")
         client.force_login(user)
