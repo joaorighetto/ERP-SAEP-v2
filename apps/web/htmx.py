@@ -13,12 +13,12 @@ from django_htmx.http import (
 
 
 def render_htmx(request, template, context, *, status=200):
-    """Render an HTMX partial. Falls back to full page render for non-HTMX requests."""
+    """Render an HTMX partial or full page for the given template."""
     return render(request, template, context, status=status)
 
 
-def htmx_redirect(url, *, status=200):
-    """Send HX-Redirect header to navigate client-side."""
+def htmx_redirect(url):
+    """Send HX-Redirect header to navigate client-side (must be 2xx for HTMX to process)."""
     return HttpResponseClientRedirect(url)
 
 

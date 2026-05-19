@@ -202,7 +202,7 @@ class TestHtmxHelpers:
         from apps.web.htmx import htmx_redirect
 
         resp = htmx_redirect("/destino/")
-        assert resp.status_code in (200, 302)
+        assert resp.status_code == 200
         assert resp["HX-Redirect"] == "/destino/"
 
     def test_htmx_refresh_retorna_hx_refresh_header(self):
