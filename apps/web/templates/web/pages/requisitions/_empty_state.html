@@ -1,5 +1,7 @@
-{% if is_filtered %}
-{% include "web/components/empty_state.html" with variant="filtered" title="Nenhuma solicitação encontrada" message="Tente ajustar os filtros ou limpar a busca." testid="empty-state-filtered" %}
-{% else %}
-{% include "web/components/empty_state.html" with variant="default" title="Nenhuma solicitação ainda" message="Suas solicitações aparecerão aqui quando forem criadas." testid="empty-state-real" %}
-{% endif %}
+<div class="rounded-lg" style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);">
+  {% if is_filtered %}
+  {% include "web/components/empty_state.html" with variant="filtered" title="Nenhuma solicitação encontrada" message="Tente ajustar os filtros ou limpar a busca." testid="empty-state-filtered" %}
+  {% else %}
+  {% include "web/components/empty_state.html" with variant="default" title="Nenhuma solicitação ainda" message="Suas solicitações aparecerão aqui quando forem criadas." testid="empty-state-real" %}
+  {% endif %}
+</div>
