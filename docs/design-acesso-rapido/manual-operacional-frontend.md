@@ -1299,14 +1299,25 @@ Teste:
 - `401`, `403`, `409`, `422` quando aplicável;
 - atributos de acessibilidade.
 
-## 13. Auth HTML — PENDENTE (views e templates ainda não implementados)
+## 13. Auth HTML — IMPLEMENTADO (PR #39 / issue #38)
 
 Login/logout HTML vivem em `apps/web`, usam sessão Django, Django Forms, templates server-rendered, CSRF e componentes oficiais.
+
+Baseline vigente:
+
+- issue: [#38](https://github.com/JMZR-SAEP/WMS-SAEP/issues/38);
+- PR mergeado: [#39](https://github.com/JMZR-SAEP/WMS-SAEP/pull/39) (`feat(auth): PR3 — login e logout HTML server-rendered`);
+- merge commit: `4ed8e84dd45e1c437e6885f5e2996954854b1035`;
+- login/logout HTML são independentes das views DRF `AuthLoginView` e `AuthLogoutView`;
+- `LOGIN_URL = "/login/"` resolve para `web:login`.
 
 Views:
 
 ```text
 apps/web/views/auth.py
+  LoginView
+  LogoutView
+  LoggedOutView
 ```
 
 Templates:
@@ -1315,10 +1326,6 @@ Templates:
 apps/web/templates/web/pages/auth/
   login.html
   logged_out.html
-  password_reset_request.html
-  password_reset_done.html
-  password_reset_confirm.html
-  password_reset_complete.html
 ```
 
 Shell público, se necessário:
@@ -1330,13 +1337,42 @@ apps/web/templates/web/layouts/auth_shell.html
 Regras:
 
 - login funciona sem JavaScript;
-- HTMX pode melhorar erro/feedback, mas não é obrigatório;
+- HTMX não faz parte do fluxo implementado;
 - não consumir endpoint DRF auth via HTMX como padrão;
 - reaproveitamento deve ocorrer em services/policies/validações, não misturando contrato JSON com HTML;
-- logout deve preferir `POST` com CSRF;
+- logout é `POST` com CSRF;
+- `GET /logout/` não encerra sessão; redireciona para login;
 - `next` deve ser interno e validado;
-- mensagens de erro são genéricas, como `Credenciais inválidas.`;
+- usuário autenticado acessando `/login/` é redirecionado para `web:home`;
+- mensagens de erro são genéricas, como `Matrícula funcional ou senha inválidas.`;
 - não revelar usuário inexistente, senha incorreta, usuário inativo ou permissão insuficiente.
+
+Form:
+
+```text
+apps/users/forms.py
+  LoginForm
+```
+
+Campos:
+
+- `matricula_funcional`, label `Matrícula funcional`, `autocomplete="username"`;
+- `password`, label `Senha`, `PasswordInput`, `autocomplete="current-password"`;
+- autenticação ocorre na view com `authenticate()`, não em `clean()` do form.
+
+Rotas:
+
+```text
+web:login       /login/
+web:logout      /logout/
+web:logged_out  /logout/concluido/
+```
+
+Navegação:
+
+- shell autenticado inclui formulário de logout `POST` com CSRF;
+- login não é item de menu operacional;
+- logout não é link `GET`.
 
 Testes de login:
 
@@ -1365,6 +1401,14 @@ Se login usar HTMX:
 - `POST` HTMX inválido retorna partial/form com erro acessível;
 - não retorna JSON;
 - não injeta shell completo dentro de partial.
+
+Fora de escopo:
+
+- password reset;
+- two-factor authentication;
+- OAuth/social login;
+- alteração das views DRF de auth;
+- Playwright para este fluxo simples.
 
 ## 14. Formulários, detalhe e ações críticas
 
