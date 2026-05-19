@@ -1,6 +1,8 @@
-{# _material_results.html — HTMX material search dropdown results
-   Context: materiais (list[Material]), item_idx (int), q (str)
-   Injected into #mat-results-{item_idx}. Each button dispatches Alpine material-selected event. #}
+{% comment %}
+_material_results.html — HTMX material search dropdown results
+Context: materiais (list[Material]), item_idx (int), q (str)
+Injected into #mat-results-{item_idx}. Each button dispatches Alpine material-selected event.
+{% endcomment %}
 {% if materiais %}
 <ul aria-label="Materiais encontrados" class="py-1 max-h-56 overflow-y-auto">
   {% for mat in materiais %}

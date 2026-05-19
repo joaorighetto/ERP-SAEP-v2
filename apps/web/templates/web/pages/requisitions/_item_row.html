@@ -1,7 +1,9 @@
-{# _item_row.html — single formset row
-   Context: form (ItemRequisicaoForm with prefix form-{idx}), idx, new_total, material_nomes
-   Rendered inline in _form_body.html and returned by requisition_item_add_view (HTMX).
-   OOB: updates id_form-TOTAL_FORMS when returned by add view. #}
+{% comment %}
+_item_row.html — single formset row
+Context: form (ItemRequisicaoForm with prefix form-{idx}), idx, new_total, material_nomes
+Rendered inline in _form_body.html and returned by requisition_item_add_view (HTMX).
+OOB: updates id_form-TOTAL_FORMS when returned by add view.
+{% endcomment %}
 {% if new_total %}
 <input id="id_form-TOTAL_FORMS"
        name="form-TOTAL_FORMS"

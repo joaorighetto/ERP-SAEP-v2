@@ -1,6 +1,8 @@
-{# _beneficiary_results.html — HTMX beneficiary search dropdown results
-   Context: beneficiarios (list[User]), q (str)
-   Injected into #beneficiary-results. Each button dispatches Alpine beneficiary-selected event. #}
+{% comment %}
+_beneficiary_results.html — HTMX beneficiary search dropdown results
+Context: beneficiarios (list[User]), q (str)
+Injected into #beneficiary-results. Each button dispatches Alpine beneficiary-selected event.
+{% endcomment %}
 {% if beneficiarios %}
 <ul aria-label="Beneficiários encontrados" class="py-1 max-h-56 overflow-y-auto">
   {% for user in beneficiarios %}
