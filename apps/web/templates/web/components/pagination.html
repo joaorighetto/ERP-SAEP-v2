@@ -9,10 +9,10 @@
     — {{ page_obj.paginator.count }} resultado{% if page_obj.paginator.count != 1 %}s{% endif %}
   </p>
 
-  <div class="flex gap-1" role="list">
+  <div class="flex gap-1">
 
     {% if page_obj.has_previous %}
-    <a href="?{% if request %}{% for key, val in request.GET.items %}{% if key != 'page' %}{{ key }}={{ val }}&{% endif %}{% endfor %}{% endif %}page={{ page_obj.previous_page_number }}"
+    <a href="{% querystring page=page_obj.previous_page_number %}"
        class="btn btn-secondary btn-sm"
        rel="prev"
        aria-label="Página anterior">
@@ -37,7 +37,7 @@
     </span>
 
     {% if page_obj.has_next %}
-    <a href="?{% if request %}{% for key, val in request.GET.items %}{% if key != 'page' %}{{ key }}={{ val }}&{% endif %}{% endfor %}{% endif %}page={{ page_obj.next_page_number }}"
+    <a href="{% querystring page=page_obj.next_page_number %}"
        class="btn btn-secondary btn-sm"
        rel="next"
        aria-label="Próxima página">
