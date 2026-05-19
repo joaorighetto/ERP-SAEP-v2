@@ -138,6 +138,8 @@ def _data_label(req: Requisicao) -> str:
         if req.data_finalizacao:
             return f"Finalizado em {req.data_finalizacao.strftime('%d/%m/%Y')}"
     if req.data_autorizacao_ou_recusa:
+        if req.status == StatusRequisicao.RECUSADA:
+            return f"Recusado em {req.data_autorizacao_ou_recusa.strftime('%d/%m/%Y')}"
         return f"Autorizado em {req.data_autorizacao_ou_recusa.strftime('%d/%m/%Y')}"
     if req.data_envio_autorizacao:
         return f"Enviado em {req.data_envio_autorizacao.strftime('%d/%m/%Y')}"
@@ -164,15 +166,11 @@ def build_requisicao_worklist_item(req: Requisicao, user) -> RequisicaoWorklistI
     is_rascunho = req.status == StatusRequisicao.RASCUNHO
     beneficiario = req.beneficiario
     is_terceiro = beneficiario is not None and beneficiario.pk != user.pk
-    total_itens = (
-        len(req.itens.all())
-        if hasattr(req, "_prefetched_objects_cache") and "itens" in req._prefetched_objects_cache
-        else req.itens.count()
-    )
+    total_itens = len(req.itens.all())
     resumo = f"{total_itens} item" if total_itens == 1 else f"{total_itens} itens"
     return RequisicaoWorklistItem(
         id=req.pk,
-        detail_url=None,
+        detail_url=None,  # TODO: implement detail_url/can_view_detail when detail view is ready
         is_rascunho=is_rascunho,
         numero_publico=req.numero_publico or None,
         status_value=req.status,

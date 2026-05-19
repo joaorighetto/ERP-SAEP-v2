@@ -30,7 +30,7 @@
     <div class="mt-3 pt-3" style="border-top: 1px solid var(--color-border);">
       <a href="{{ item.detail_url }}"
          class="btn btn-secondary btn-sm w-full"
-         aria-label="Ver detalhe da solicitação {{ item.numero_publico }}">
+         aria-label="Ver detalhe {% if item.is_rascunho %}do rascunho{% else %}da solicitação {{ item.numero_publico }}{% endif %}">
         Ver detalhe
       </a>
     </div>

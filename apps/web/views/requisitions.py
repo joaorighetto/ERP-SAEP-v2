@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.shortcuts import render
 from django.urls import reverse
 from django.views import View
@@ -17,14 +18,15 @@ _STATUS_CHOICES = [(s.value, s.label) for s in StatusRequisicao]
 
 class MinhasSolicitacoesView(LoginRequiredMixin, View):
     def get(self, request):
-        qs = queryset_requisicoes_pessoais(request.user)
+        qs = queryset_requisicoes_pessoais(request.user, skip_prefetch=True).prefetch_related(
+            "itens"
+        )
 
         q = request.GET.get("q", "").strip()
         status_filter = request.GET.get("status", "").strip()
 
         if q:
-            qs = qs.filter(numero_publico__icontains=q) | qs.filter(observacao__icontains=q)
-            qs = qs.distinct()
+            qs = qs.filter(Q(numero_publico__icontains=q) | Q(observacao__icontains=q)).distinct()
 
         if status_filter and status_filter in StatusRequisicao.values:
             qs = qs.filter(status=status_filter)
