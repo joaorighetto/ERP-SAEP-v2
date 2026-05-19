@@ -4,7 +4,7 @@ General style:
 - Follow existing repository patterns and documented design decisions before introducing new abstractions.
 - Keep changes narrow and aligned with domain boundaries.
 - Prefer services/use cases for business logic and policies for contextual authorization.
-- Keep views, serializers, templates, admin actions, signals, and management commands thin.
+- Keep views, serializers, templates, HTMX partials, admin actions, signals, and management commands thin.
 - Use explicit contracts for APIs and update OpenAPI/tests when contracts change.
 - Follow `docs/design-acesso-rapido/api-contracts.md` as the canonical API contract standard.
 - Add regression tests for every bug fix.
@@ -21,7 +21,15 @@ Django/DRF conventions:
 - For writes, services must validate profile, scope, and domain state.
 - For SCPI catalogs, pair model validation with DB constraints when ORM bypass is a real risk.
 
-**Patterns — Port/Adapter and state machine**
+Frontend conventions:
+- Build pilot frontend with Django templates first.
+- Use HTMX for partial submit, filtering, reload, and inline actions before considering Alpine.js.
+- Use Alpine.js only for small local state such as toggle/disclosure/modal-simple behavior.
+- Do not encode domain transitions, permission decisions, or contract shaping in templates or Alpine snippets.
+- Do not recreate a separate SPA scaffold unless a new ADR explicitly reopens that path.
+- Keep UI language aligned with domain terms from `CONTEXT.md`.
+
+Patterns — Port/Adapter and state machine:
 - Define thin domain interfaces (Protocols) as ports; implement adapters in infrastructure modules.
 - Declare state machines as explicit transition tables with a single applier function, not scattered `if/elif`.
 - Extract queries, sequences, idempotency, validation into focused modules; keep `services.py` for orchestration.

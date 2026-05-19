@@ -1,0 +1,42 @@
+<!-- form_field.html: field (Django BoundField), aria-invalid, aria-describedby handled automatically -->
+{% with field_id=field.id_for_label field_errors=field.errors %}
+<div class="space-y-1.5" {% if testid %}data-testid="{{ testid }}"{% endif %}>
+
+  <label for="{{ field_id }}" class="form-label">
+    {{ field.label }}
+    {% if field.field.required %}
+    <span aria-hidden="true" style="color: var(--color-danger);">*</span>
+    {% endif %}
+  </label>
+
+  {% with widget=field.field.widget %}
+  {% if widget.input_type == "select" or widget.input_type == "select-one" %}
+  {{ field.as_widget }}
+  {% else %}
+  <input type="{{ widget.input_type|default:'text' }}"
+         id="{{ field_id }}"
+         name="{{ field.html_name }}"
+         class="form-input"
+         value="{{ field.value|default:'' }}"
+         {% if field.field.required %}required{% endif %}
+         {% if field_errors %}aria-invalid="true" aria-describedby="{{ field_id }}-error"{% elif field.help_text %}aria-describedby="{{ field_id }}-help"{% endif %}
+         {% if field.field.widget.attrs %}
+           {% for attr, val in field.field.widget.attrs.items %}{{ attr }}="{{ val }}" {% endfor %}
+         {% endif %}>
+  {% endif %}
+  {% endwith %}
+
+  {% if field.help_text and not field_errors %}
+  <p id="{{ field_id }}-help" class="text-xs" style="color: var(--color-text-muted);">
+    {{ field.help_text }}
+  </p>
+  {% endif %}
+
+  {% if field_errors %}
+  <p id="{{ field_id }}-error" class="text-xs font-medium" style="color: var(--color-danger);" role="alert">
+    {{ field_errors.0 }}
+  </p>
+  {% endif %}
+
+</div>
+{% endwith %}

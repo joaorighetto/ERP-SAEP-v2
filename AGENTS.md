@@ -23,11 +23,16 @@ O repositório é de contexto único. Leia primeiro o `CONTEXT.md` na raiz, `doc
 
 ## Projeto
 
-WMS auxiliar para o **SAEP — Serviço de Água e Esgoto de Pirassununga**, autarquia municipal. O projeto segue **backend/API-first** em **Django 6 + Django REST Framework (DRF)** e agora possui também uma frente ativa de frontend para o piloto, implementada como SPA separada no mesmo repositório.
+WMS auxiliar para o **SAEP — Serviço de Água e Esgoto de Pirassununga**, autarquia municipal. O projeto segue **backend/API-first** em **Django 6 + Django REST Framework (DRF)** e a frente ativa de frontend do piloto volta a ser **server-rendered no Django**.
 
-A fundação dessa SPA já existe em `frontend/`, com Vite, TanStack Router file-based, TanStack Query, client OpenAPI tipado e smoke tests. As próximas fatias devem partir dessa base, não recriá-la.
+O reset atual abandona a fundação SPA anterior. A nova direção do piloto é:
 
-Após a decisão de reset neutro do frontend (issue #28), a UI de produto anterior da SPA foi descartada. Preserve apenas a infraestrutura técnica documentada; não ressuscite rotas, telas, layout ou fluxos antigos sem nova decisão explícita. A PR #30/auth-shell fica bloqueada até a issue #29 definir design system e layout base.
+- Django templates como superfície principal;
+- `django-htmx` para interações incrementais;
+- Tailwind CSS para styling;
+- Alpine.js apenas onde HTMX não cobrir a interação com simplicidade suficiente.
+
+Não ressuscite `frontend/`, Vite, React, TanStack ou fluxos da SPA antiga sem decisão explícita posterior.
 
 ## Estratégia de leitura da documentação
 
@@ -41,13 +46,9 @@ Para economizar tokens e manter os agentes focados, a documentação de design d
 
 - Django 6: `/django/django/6_0a1`
 - DRF: `/websites/django-rest-framework`
-- TanStack Router: `/tanstack/router`
-- TanStack Query: `/tanstack/query`
-- TanStack Table: `/tanstack/table`
-- openapi-typescript + openapi-fetch: `/websites/openapi-ts_dev`
-- React Hook Form: `/react-hook-form/react-hook-form`
-- Zod: `/colinhacks/zod`
-- shadcn/ui: `/shadcn-ui/ui`
+- django-htmx: `/adamchainz/django-htmx`
+- Tailwind CSS: `/tailwindlabs/tailwindcss.com`
+- Alpine.js: `/websites/alpinejs_dev`
 
 ### Quando consultar o Context7 (gatilhos):
 
@@ -61,10 +62,10 @@ Para economizar tokens e manter os agentes focados, a documentação de design d
 | Autorização | DRF Permissions + `policies.py` do projeto |
 | Filtros, busca, ordenação | DRF Filtering, QuerySet API, lookup expressions |
 | Testes | Django TestCase, pytest-django, DRF APIClient |
-| SPA do piloto (qualquer arquivo em `frontend/`) | `docs/design-acesso-rapido/frontend-arquitetura-piloto.md` + IDs acima |
+| Frontend do piloto server-rendered | `docs/design-acesso-rapido/frontend-arquitetura-piloto.md` + IDs acima |
 | Management commands, signals, admin, settings | Documentação específica da área |
 
-**Nunca**: implementar Django/DRF sem consultar Context7. Nunca assumir APIs sem confirmar versão atual. Nunca misturar versões de Django/DRF/libs. Nunca iniciar features da SPA antes de confirmar gate do bloco 0.
+**Nunca**: implementar Django/DRF sem consultar Context7. Nunca assumir APIs sem confirmar versão atual. Nunca misturar versões de Django/DRF/libs. Nunca iniciar o frontend do piloto sem confirmar o contrato documentado vigente.
 
 
 ## Ambiente de desenvolvimento efêmero
@@ -77,11 +78,8 @@ Durante a fase inicial, o ambiente local é descartável.
 - `rtk make init` deve ser usado no setup inicial do projeto para criar `.venv` e instalar dependências.
 - `rtk make test` executa a suíte com `DJANGO_SETTINGS_MODULE=config.settings.test` e opções econômicas/seguras de pytest: `-q -ra --tb=short --strict-markers --disable-warnings`;
 - Para execução manual equivalente, use `DJANGO_SETTINGS_MODULE=config.settings.test pytest -q -ra --tb=short --strict-markers --disable-warnings`;
-- `rtk make frontend-init` instala dependências da SPA e prepara o navegador Chromium do Playwright;
-- `rtk make frontend-gen-api` exporta `frontend/openapi/schema.json` e regenera `frontend/src/shared/api/schema.d.ts`;
-- `rtk make frontend-dev`, `rtk make frontend-build`, `rtk make frontend-lint`, `rtk make frontend-test` e `rtk make frontend-e2e` são os entrypoints operacionais oficiais da SPA;
-- `rtk make frontend-e2e` requer banco limpo com seed: executar `rtk make resetdb` e `rtk make seed-pilot-minimo` antes;
 - `rtk make run` sobe o servidor de desenvolvimento Django na porta padrão;
+- os entrypoints do frontend server-rendered serão definidos junto com a nova infraestrutura; não reutilize os comandos `frontend-*` da SPA removida;
 - neste momento do projeto, toda edição de `models`/schema deve ser seguida de `rtk make setup`, para não depender de gestão manual de migrations.
 - migrations de apps devem ser tratadas como artefato efêmero: antes de testar ou concluir uma implementação que altere schema, apagar e recriar as migrations locais do zero, simulando uma primeira execução limpa do app.
 - confeccionar novos arquivos de migration não faz parte da entrega normal do trabalho neste contexto efêmero.
@@ -95,7 +93,7 @@ Durante a fase inicial, o ambiente local é descartável.
 
 - Declare em todo endpoint: autenticação, autorização, entrada, saída, status HTTP, envelope de erro, paginação/filtros e schema OpenAPI.
 - Siga `docs/design-acesso-rapido/api-contracts.md` como contrato canônico para endpoints DRF.
-- Siga `docs/design-acesso-rapido/frontend-arquitetura-piloto.md` como contrato canônico para a arquitetura da SPA do piloto.
+- Siga `docs/design-acesso-rapido/frontend-arquitetura-piloto.md` como contrato canônico para a arquitetura do frontend do piloto.
 - Centralize regras de autorização contextual em `policies.py` ou equivalente.
 - Faça views e services chamarem a mesma política de autorização.
 - Valide perfil e escopo do objeto no service para toda escrita.
@@ -107,7 +105,7 @@ Durante a fase inicial, o ambiente local é descartável.
 - Use `transaction.atomic()`, `select_for_update()` e ordem determinística de locks em mutações de saldo ou ledger.
 - Rode testes PostgreSQL na CI para locking, constraints, índices parciais e concorrência.
 - Gere e compare o schema OpenAPI na CI.
-- Trate o OpenAPI exportado como contrato vivo entre backend e frontend.
+- Trate o OpenAPI exportado como contrato vivo entre backend e frontend, mesmo no frontend server-rendered.
 - Use `publish_on_commit()` para side effects pós-transação.
 - Adicione teste de regressão para todo bug corrigido.
 - Cubra regra crítica com caminho feliz, permissão negada, violação de domínio e contrato de erro.
@@ -116,7 +114,7 @@ Durante a fase inicial, o ambiente local é descartável.
 
 - Não deixe contrato HTTP para “arrumar depois”.
 - Não exponha endpoint sem contrato explícito de entrada, saída, erros e permissões.
-- Não acople a SPA do piloto ao admin do Django, a templates server-rendered ou a superfícies implícitas de autenticação.
+- Não trate o admin do Django como substituto da interface operacional do piloto.
 - Não duplique regra de autorização entre view, service e serializer.
 - Não confie só em `permission_classes` quando a regra depende do objeto ou departamento.
 - Não coloque regra de negócio em views, serializers, admin actions, signals ou management commands.
@@ -186,5 +184,4 @@ docs: update pilot data modeling notes
 - Rode a suíte completa de testes após qualquer refactor e confirme a contagem de testes passados antes de commitar.
 - Ao depurar falhas de teste, capture o traceback completo antes de tentar corrigir.
 - Para testes Django: `rtk make test` (usa `DJANGO_SETTINGS_MODULE=config.settings.test` com opções seguras do pytest).
-- Para testes de frontend: `rtk make frontend-test` (Vitest), `rtk make frontend-e2e` (Playwright com seed data).
-- Verifique a consistência do estado do banco de dados: resete com `rtk make resetdb` e recarregue os seeds com `rtk make seed-pilot-minimo` antes do E2E.
+- Para testes do frontend server-rendered, defina checks no mesmo PR que introduzir a nova infraestrutura. Não ressuscite Vitest/Playwright da SPA sem nova decisão explícita.

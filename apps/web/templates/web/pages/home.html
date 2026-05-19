@@ -1,0 +1,88 @@
+{% extends "web/layouts/app_shell.html" %}
+
+{% block title %}Início{% endblock %}
+
+{% block main %}
+<div class="max-w-4xl">
+
+  <header class="mb-8">
+    <h1 class="text-xl font-semibold" style="color: var(--color-text-primary);">
+      WMS-SAEP — Fundação
+    </h1>
+    <p class="mt-1 text-sm" style="color: var(--color-text-muted);">
+      Página técnica de validação da fundação do frontend server-rendered.
+    </p>
+  </header>
+
+  {# Design system showcase — remove before first jornada operacional #}
+  <div class="space-y-8">
+
+    <section aria-labelledby="sec-buttons">
+      <h2 id="sec-buttons" class="text-sm font-semibold uppercase tracking-wider mb-3"
+          style="color: var(--color-text-muted); font-family: var(--font-mono);">
+        Botões
+      </h2>
+      <div class="flex flex-wrap gap-2">
+        {% include "web/components/button.html" with label="Primário" variant="primary" type="button" %}
+        {% include "web/components/button.html" with label="Secundário" variant="secondary" type="button" %}
+        {% include "web/components/button.html" with label="Outline" variant="outline" type="button" %}
+        {% include "web/components/button.html" with label="Ghost" variant="ghost" type="button" %}
+        {% include "web/components/button.html" with label="Perigo" variant="danger" type="button" %}
+        {% include "web/components/button.html" with label="Desabilitado" variant="primary" type="button" disabled=True %}
+      </div>
+    </section>
+
+    <section aria-labelledby="sec-badges">
+      <h2 id="sec-badges" class="text-sm font-semibold uppercase tracking-wider mb-3"
+          style="color: var(--color-text-muted); font-family: var(--font-mono);">
+        Badges
+      </h2>
+      <div class="flex flex-wrap gap-2">
+        {% include "web/components/badge.html" with label="Neutro" variant="neutral" %}
+        {% include "web/components/badge.html" with label="Info" variant="info" %}
+        {% include "web/components/badge.html" with label="Sucesso" variant="success" %}
+        {% include "web/components/badge.html" with label="Atenção" variant="warning" %}
+        {% include "web/components/badge.html" with label="Erro" variant="danger" %}
+      </div>
+    </section>
+
+    <section aria-labelledby="sec-alerts">
+      <h2 id="sec-alerts" class="text-sm font-semibold uppercase tracking-wider mb-3"
+          style="color: var(--color-text-muted); font-family: var(--font-mono);">
+        Alertas
+      </h2>
+      <div class="space-y-2">
+        {% include "web/components/alert.html" with message="Informação contextual ou orientação." variant="info" %}
+        {% include "web/components/alert.html" with message="Operação realizada com sucesso." variant="success" %}
+        {% include "web/components/alert.html" with message="Verifique os dados antes de continuar." variant="warning" %}
+        {% include "web/components/alert.html" with message="Ocorreu um erro. Tente novamente." variant="danger" %}
+      </div>
+    </section>
+
+    <section aria-labelledby="sec-empty">
+      <h2 id="sec-empty" class="text-sm font-semibold uppercase tracking-wider mb-3"
+          style="color: var(--color-text-muted); font-family: var(--font-mono);">
+        Estado vazio
+      </h2>
+      <div class="rounded-lg" style="border: 1px solid var(--color-border); background-color: var(--color-surface-raised);">
+        {% include "web/components/empty_state.html" with title="Nenhum item encontrado" message="Não há registros para exibir no momento." variant="default" testid="empty-state-demo" %}
+      </div>
+    </section>
+
+    <section aria-labelledby="sec-targets">
+      <h2 id="sec-targets" class="text-sm font-semibold uppercase tracking-wider mb-3"
+          style="color: var(--color-text-muted); font-family: var(--font-mono);">
+        Targets HTMX (ocultos para usuário)
+      </h2>
+      <div class="p-3 rounded text-xs font-mono"
+           style="background-color: var(--color-surface-muted); color: var(--color-text-muted);">
+        <p>#main-content — presente no shell</p>
+        <p>#global-feedback — aria-live="polite"</p>
+        <p>#global-errors — aria-live="assertive"</p>
+        <p>#modal-root — aria-live="polite"</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}

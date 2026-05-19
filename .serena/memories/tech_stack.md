@@ -15,17 +15,14 @@ Current active stack for WMS-SAEP:
 - factory_boy as the chosen standard for test data generation.
 
 Approved pilot frontend stack:
-- separate SPA in `frontend/`
-- `pnpm` as Node package manager, integrated through repo `Makefile`
-- React + TypeScript + Vite
-- TanStack Query, TanStack Router, TanStack Table
-- React Hook Form + Zod
-- `openapi-typescript` + `openapi-fetch`
-- Tailwind CSS + shadcn/ui + Radix UI
-- Playwright for E2E
-- exported OpenAPI input file at `frontend/openapi/schema.json`
-- generated OpenAPI types at `frontend/src/shared/api/schema.d.ts`
-- generated TanStack Router tree at `frontend/src/routeTree.gen.ts`
+- Django server-rendered frontend in the same repo/app surface.
+- Django templates as the primary UI surface.
+- `django-htmx` + HTMX for incremental interactions.
+- Tailwind CSS for styling.
+- Alpine.js only for small local state where HTMX alone is insufficient.
+- Django session auth + CSRF for frontend auth flows.
+- DRF + OpenAPI stay relevant for backend/frontend contract surfaces that remain API-based.
+- The old `frontend/` SPA scaffold is removed and is not part of the active stack.
 
 Current dependency baseline after the 2026-04-27 audit/upgrade (`d7702de chore: upgrade python dependencies`):
 - Django 6.0.4, djangorestframework 3.17.1, drf-spectacular 0.29.0.
@@ -35,44 +32,33 @@ Current dependency baseline after the 2026-04-27 audit/upgrade (`d7702de chore: 
 
 Materialization baseline:
 - Django materialization is complete and no longer tracked in a separate backlog file.
-- Functional pilot slices now landed through `PIL-BE-ACE-005`, `PIL-BE-MAT-002`, `PIL-BE-EST-001`, `PIL-BE-MAT-003`, `PIL-BE-IMP-001`, `PIL-BE-IMP-002`, and `PIL-BE-REQ-001`.
+- Functional pilot slices now landed through requisitions, approvals, fulfillment, notifications, and related backend enablement work.
 
-Current state: Django project initialized with technical infrastructure plus active domain apps `users`, `materials`, `stock`, and `requisitions`.
+Current state: Django project initialized with technical infrastructure plus active domain apps `users`, `materials`, `stock`, `requisitions`, and `notifications`.
 
-**Backend module structure** (after requisitions refactoring PR #22):
-- `config/` → settings, URLs, ASGI/WSGI, bootstrap.
-- `apps/core/` → API infrastructure, pagination, error envelope, schema helpers.
-- `apps/users/` → custom user, sectors, role/policy foundation.
-- `apps/materials/` → `GrupoMaterial`, `SubgrupoMaterial`, `Material`, list/search API, SCPI CSV parsing.
-- `apps/stock/` → `EstoqueMaterial`, immutable `MovimentacaoEstoque`, stock admin, initial-balance bootstrap, `StockAdapter` (implements `StockPort` from requisitions).
-- `apps/requisitions/` (refactored):
-  - `models.py` → `Requisicao`, `ItemRequisicao`, `HistoricalRecord` (via django-simple-history).
-  - `domain/state_machine.py` → declarative state machine with transition table.
-  - `policies.py` → centralized authorization checks (contextual: object-aware, scope-aware).
-  - `services.py` → business orchestration and domain rules (reduced scope after module extraction).
-  - `queries.py` → query helpers (load, lock, validate patterns).
-  - `sequences.py` → public number and ID generation.
-  - `idempotency.py` → payload idempotency with cached result.
-  - `ports.py` → `StockPort` interface (Protocol) for decoupled stock operations.
-  - `serializers.py` → DRF serializers for API input/output.
-  - `views.py` → thin APIViews/ViewSets.
-- `apps/notifications/` → in-process pub/sub event bus (`core/events.py`), notification models, domain event subscribers.
+Backend module structure:
+- `config/` -> settings, URLs, ASGI/WSGI, bootstrap.
+- `apps/core/` -> API infrastructure, pagination, error envelope, schema helpers.
+- `apps/users/` -> custom user, sectors, role/policy foundation.
+- `apps/materials/` -> `GrupoMaterial`, `SubgrupoMaterial`, `Material`, list/search API, SCPI CSV parsing.
+- `apps/stock/` -> `EstoqueMaterial`, immutable `MovimentacaoEstoque`, stock admin, initial-balance bootstrap, `StockAdapter` (implements `StockPort` from requisitions).
+- `apps/requisitions/` -> models, declarative state machine, centralized policies, orchestration services, query helpers, sequences, idempotency, serializers, and thin views.
+- `apps/notifications/` -> in-process event bus, notification models, domain event subscribers.
 
-**Port/Adapter pattern** (ADR 0002 — Accepted):
+Port/Adapter pattern (ADR 0002 — Accepted):
 - `StockPort` (Protocol): `apps/requisitions/ports.py`.
 - `StockAdapter` (implementation): `apps/stock/adapters.py`.
-- Prevents circular coupling; requires no direct import of requisitions in stock.
-- Port methods: `aplicar_reservas_autorizacao`, `liberar_reservas_cancelamento`, `aplicar_saidas_e_liberacoes_retirada`.
+- No direct requisitions <- stock circular dependency.
 
 Initial settings are `config.settings.base`, `config.settings.dev`, and `config.settings.test`; do not create a separate `test_postgres` settings module.
 - PostgreSQL is configured through `DATABASE_URL`; no Docker Compose or production settings are part of the active baseline.
-- `frontend/` is now materialized with Vite, Tailwind CSS, TanStack Router file-based routing, TanStack Query provider wiring, `openapi-fetch` client bootstrap, Vitest smoke tests, and Playwright smoke E2E.
+- No React/Vite/TanStack frontend remains active in repo contract.
 
 Current validation snapshot:
-- `rtk make test` passed locally on 2026-04-29 with 175 collected tests.
-- The current suite covers API pagination/search contracts, SCPI parser edge cases, import all-or-nothing behavior, and initial stock-movement consistency.
+- `rtk make test` is still the broad backend validation default.
+- Frontend server-rendered validation must be introduced incrementally with each new slice; do not assume the deleted SPA lint/build/E2E jobs still exist.
 
-Current scope rule: frontend pilot work is now part of the active implementation scope, but only through the approved separate SPA architecture and only after the backend enablement block (`bloco 0`) is completed. Backend/API work, domain rules, persistence, authentication, authorization, imports, internal/admin flows, and tests remain the source-of-truth frontier; do not introduce server-rendered UI work or a parallel frontend shape outside the approved SPA path.
+Current scope rule: frontend pilot work is now part of the active implementation scope through the approved Django templates + HTMX + Tailwind + Alpine architecture. Backend/API work, domain rules, persistence, authentication, authorization, imports, internal/admin flows, and tests remain the source-of-truth frontier. Do not resurrect a separate SPA path without an explicit new decision.
 
 Typing/tooling rule: mypy, django-stubs, and djangorestframework-stubs are intentionally out of the current stack and may be reconsidered later if static typing becomes an explicit project discipline.
 

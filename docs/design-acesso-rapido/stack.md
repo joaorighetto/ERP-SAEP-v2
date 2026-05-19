@@ -36,34 +36,33 @@ O frontend do piloto faz parte do escopo ativo do projeto.
 
 Diretriz atual:
 
-- implementar uma SPA separada em `frontend/`, no mesmo repositório;
-- usar a fundação já materializada em `frontend/` como ponto de partida para as próximas slices;
+- usar Django server-rendered como superfície principal do piloto;
+- usar `django-htmx` para interações incrementais e atualização parcial de tela;
+- usar Tailwind CSS para styling utilitário;
+- usar Alpine.js apenas onde HTMX não resolver a interação com simplicidade suficiente;
 - manter o backend Django como fonte de verdade para domínio, autenticação, autorização e OpenAPI;
-- usar sessão Django com CSRF para autenticação da SPA;
+- usar sessão Django com CSRF para autenticação;
 - tratar o frontend como interface operacional do piloto, não como frente paralela de administração genérica;
-- bloquear o avanço das features operacionais da SPA até a conclusão do bloco 0 de APIs habilitadoras do backend.
+- reconstruir a infraestrutura do frontend sem reaproveitar a SPA anterior.
 
 Stack prevista para o frontend do piloto:
 
-- React + TypeScript + Vite;
-- TanStack Query;
-- TanStack Router;
-- TanStack Table;
-- React Hook Form + Zod;
-- openapi-typescript + openapi-fetch;
-- Tailwind CSS + shadcn/ui + Radix UI;
-- Playwright.
+- Django templates;
+- `django-htmx`;
+- HTMX;
+- Tailwind CSS;
+- Alpine.js;
+- sessão Django com CSRF;
+- DRF + OpenAPI como contrato dos fluxos que continuarem expostos por API.
 
-O detalhe operacional da arquitetura do frontend está em `docs/design-acesso-rapido/frontend-arquitetura-piloto.md`, e a decisão macro está registrada em `docs/adr/0001-frontend-piloto-spa-separada.md`.
+O detalhe operacional da arquitetura do frontend está em `docs/design-acesso-rapido/frontend-arquitetura-piloto.md`, e a decisão macro está registrada em `docs/adr/0009-frontend-piloto-django-htmx.md`.
 
-Base já entregue para o frontend do piloto:
+Estado atual do reset:
 
-- shell em `frontend/` com React + TypeScript + Vite;
-- roteamento file-based com TanStack Router;
-- provider de TanStack Query;
-- client `openapi-fetch` tipado a partir de `frontend/openapi/schema.json`;
-- smoke tests com Vitest e Playwright;
-- comandos oficiais `rtk make frontend-init`, `frontend-gen-api`, `frontend-dev`, `frontend-build`, `frontend-lint`, `frontend-test` e `frontend-e2e`.
+- a fundação SPA anterior foi descartada;
+- o diretório `frontend/` deixa de ser parte da stack ativa;
+- os comandos `frontend-*` do `Makefile` deixam de ser entrypoints oficiais;
+- a nova infraestrutura server-rendered será reintroduzida incrementalmente no próprio Django.
 
 ## 4. Django REST Framework
 

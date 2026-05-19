@@ -18,7 +18,7 @@ If some file is absent in future, proceed silently. Do not invent missing doc re
 ## Repo-specific consumer rules
 
 - Start with `docs/design-acesso-rapido/`
-- Use `docs/design-acesso-rapido/frontend-arquitetura-piloto.md` for SPA pilot work
+- Use `docs/design-acesso-rapido/frontend-arquitetura-piloto.md` for pilot frontend work
 - Use `docs/design-acesso-rapido/api-contracts.md` for DRF contract work
 - Use `docs/design-acesso-rapido/matriz-permissoes.md` for papel/escopo questions
 - Use `docs/design-acesso-rapido/matriz-invariantes.md` and `estado-transicoes-requisicao.md` for requisition/stock invariants

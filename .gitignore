@@ -6,8 +6,9 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
-dist/
-build/
+/dist/
+/build/
+apps/web/static/web/dist/
 
 # Django
 *.log
@@ -58,7 +59,6 @@ Thumbs.db
 
 # Code review artefacts
 docs/code-reviews/
-.superpowers/
 
 # Superpowers
 .superpowers/

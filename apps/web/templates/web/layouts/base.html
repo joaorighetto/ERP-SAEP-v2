@@ -1,0 +1,24 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}WMS-SAEP{% endblock %} — SAEP</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="{% static 'web/dist/app.css' %}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+  {% block body %}{% endblock %}
+
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
+  <script src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js" defer></script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

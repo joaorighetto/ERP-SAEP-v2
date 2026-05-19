@@ -19,7 +19,7 @@ Decisões base:
 - filtros tipados com `django-filter`;
 - códigos técnicos de erro em inglês e mensagens em PT-BR.
 
-Token, JWT ou autenticação mista ficam fora da primeira versão. Só devem ser adotados quando houver consumidor que não use sessão de navegador com segurança, como app mobile, SPA separada em outro domínio, CLI, integração externa ou consumo máquina-a-máquina.
+Token, JWT ou autenticação mista ficam fora da primeira versão. Só devem ser adotados quando houver consumidor que não use sessão de navegador com segurança, como app mobile, frontend dedicado em outro domínio, CLI, integração externa ou consumo máquina-a-máquina.
 
 ## 2. Checklist obrigatório por endpoint
 
@@ -70,7 +70,7 @@ Qualquer exceção a esse padrão deve ser documentada no `@extend_schema`, nos 
 
 ### 3.1. `GET /api/v1/requisitions/mine/`
 
-Contrato da lista pessoal usada por `Minhas requisições` na SPA do piloto:
+Contrato da lista pessoal usada por `Minhas requisições` no frontend do piloto:
 
 - autenticação: sessão Django padrão;
 - autorização geral: usuário autenticado;

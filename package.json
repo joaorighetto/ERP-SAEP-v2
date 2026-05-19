@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0"
+  },
+  "scripts": {
+    "css:dev": "tailwindcss -i apps/web/static/web/src/styles.css -o apps/web/static/web/dist/app.css --watch",
+    "css:build": "tailwindcss -i apps/web/static/web/src/styles.css -o apps/web/static/web/dist/app.css --minify"
+  }
+}
