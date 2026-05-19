@@ -2,9 +2,9 @@
    Context: beneficiarios (list[User]), q (str)
    Injected into #beneficiary-results. Each button dispatches Alpine beneficiary-selected event. #}
 {% if beneficiarios %}
-<ul role="listbox" aria-label="Beneficiários encontrados" class="py-1 max-h-56 overflow-y-auto">
+<ul aria-label="Beneficiários encontrados" class="py-1 max-h-56 overflow-y-auto">
   {% for user in beneficiarios %}
-  <li role="option">
+  <li>
     <button type="button"
             class="w-full text-left px-3 py-2 text-sm transition-colors duration-100"
             style="color: var(--color-text-primary);"

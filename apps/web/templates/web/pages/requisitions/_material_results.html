@@ -2,9 +2,9 @@
    Context: materiais (list[Material]), item_idx (int), q (str)
    Injected into #mat-results-{item_idx}. Each button dispatches Alpine material-selected event. #}
 {% if materiais %}
-<ul role="listbox" aria-label="Materiais encontrados" class="py-1 max-h-56 overflow-y-auto">
+<ul aria-label="Materiais encontrados" class="py-1 max-h-56 overflow-y-auto">
   {% for mat in materiais %}
-  <li role="option">
+  <li>
     <button type="button"
             class="w-full text-left px-3 py-2 text-sm transition-colors duration-100"
             style="color: var(--color-text-primary);"

@@ -661,30 +661,38 @@ class TestItemAdd:
 # ---------------------------------------------------------------------------
 
 
+def _nav_keys(resp):
+    """Extract nav item keys from response context navigation tree."""
+    navigation = resp.context.get("navigation", [])
+    keys = []
+    for section in navigation:
+        for item in section.get("items", []):
+            keys.append(item.get("key"))
+    return keys
+
+
 @pytest.mark.django_db
 class TestNavegacao:
-    def _get_nav_content(self, papel):
-        u = _user(f"nav_{papel}", papel=papel)
+    def _get_nav_keys(self, papel, matricula=None):
+        mat = matricula or f"nav_{papel}"
+        u = _user(mat, papel=papel)
         client = Client()
         client.force_login(u)
         resp = client.get(_create_url())
-        return resp.content
+        return _nav_keys(resp)
 
     def test_solicitante_tem_nova_solicitacao_no_nav(self):
-        content = self._get_nav_content(PapelChoices.SOLICITANTE)
-        assert b"Nova solicita" in content
+        assert "requisition_create" in self._get_nav_keys(PapelChoices.SOLICITANTE, "nav_sol")
 
     def test_auxiliar_setor_tem_nova_solicitacao_no_nav(self):
-        content = self._get_nav_content(PapelChoices.AUXILIAR_SETOR)
-        assert b"Nova solicita" in content
+        assert "requisition_create" in self._get_nav_keys(PapelChoices.AUXILIAR_SETOR, "nav_aux")
 
     def test_chefe_setor_tem_nova_solicitacao_no_nav(self):
-        content = self._get_nav_content(PapelChoices.CHEFE_SETOR)
-        assert b"Nova solicita" in content
+        assert "requisition_create" in self._get_nav_keys(PapelChoices.CHEFE_SETOR, "nav_chf")
 
     def test_auxiliar_almoxarifado_tem_nova_solicitacao_no_nav(self):
         u = User.objects.create_user(
-            matricula_funcional="nav_alm",
+            matricula_funcional="nav_almx",
             password="x",
             nome_completo="Alm",
             papel=PapelChoices.AUXILIAR_ALMOXARIFADO,
@@ -693,4 +701,4 @@ class TestNavegacao:
         client = Client()
         client.force_login(u)
         resp = client.get(_create_url())
-        assert b"Nova solicita" in resp.content
+        assert "requisition_create" in _nav_keys(resp)

@@ -461,9 +461,11 @@ def requisition_send_view(request, pk):
     from apps.requisitions.services import enviar_para_autorizacao
 
     if not request.user.is_authenticated:
-        from django.shortcuts import redirect as redir
+        from apps.web.htmx import htmx_session_expired
 
-        return redir("web:login")
+        if getattr(request, "htmx", False):
+            return htmx_session_expired(reverse("web:login"))
+        return redirect("web:login")
 
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
@@ -487,7 +489,13 @@ def requisition_send_view(request, pk):
     try:
         enviar_para_autorizacao(requisicao=req, ator=request.user)
     except Exception:
-        pass  # TODO: surface error via session message when flash messages added
+        # Flash messages not yet available; redirect back to edit so user can retry.
+        edit_url = reverse("web:requisition_edit", args=[pk])
+        if getattr(request, "htmx", False):
+            from django_htmx.http import HttpResponseClientRedirect
+
+            return HttpResponseClientRedirect(edit_url)
+        return redirect(edit_url)
 
     if getattr(request, "htmx", False):
         from django_htmx.http import HttpResponseClientRedirect
