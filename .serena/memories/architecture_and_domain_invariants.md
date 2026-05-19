@@ -1,6 +1,6 @@
 # Architecture and domain invariants
 
-Core architectural rule: business rules belong in `services.py` / service-use-case modules. Keep DRF views, serializers, templates, admin actions, signals, management commands, and generic helpers thin. Serializers validate input/output shape and local payload coherence, not critical domain workflow.
+Core architectural rule: business rules belong in `services.py` / service-use-case modules. Keep DRF views, serializers, templates, HTMX partial views, Alpine snippets, admin actions, signals, management commands, and generic helpers thin. Serializers validate input/output shape and local payload coherence, not critical domain workflow.
 
 Authorization must be explicit and consistent. Contextual authorization should be centralized in `policies.py` or equivalent and used by both views and services. Always validate object scope/profile in services for writes, and for concurrent write paths prefer validating against the locked/reloaded object inside `transaction.atomic()` instead of the potentially stale caller instance.
 
@@ -11,6 +11,14 @@ Authentication invariant:
 
 Every API endpoint must follow `docs/design-acesso-rapido/api-contracts.md`: session authentication with CSRF by default, general authorization through `permission_classes`, contextual authorization through shared policies, explicit input/output serializers, explicit status codes, the standard error envelope, pagination/filtering/ordering when applicable, and OpenAPI schema coverage. Changes to API contracts require tests and schema updates.
 
+Frontend architecture invariant:
+- The active pilot frontend is Django server-rendered, not a separate SPA.
+- Django templates are the primary UI surface.
+- HTMX is the first choice for incremental interaction.
+- Alpine.js is allowed only for small local state where HTMX alone is insufficient.
+- Do not move domain rules or authorization decisions into templates, Alpine state, or ad hoc JS.
+- Do not resurrect `frontend/`, React, Vite, TanStack, generated TS clients, or deleted SPA CI jobs without an explicit new architecture decision.
+
 API response invariant:
 - Successful detail/action responses return the resource or result directly, without a global success envelope.
 - List responses use the standard pagination envelope with `count`, `page`, `page_size`, `total_pages`, `next`, `previous`, and `results`.
@@ -20,7 +28,7 @@ API response invariant:
 
 Stock invariants:
 - `MovimentacaoEstoque` is immutable. Do not update/delete/overwrite movements; corrections must be modeled as new movements when new movement types are introduced.
-- Currently implemented movement types: `SALDO_INICIAL` (SCPI bootstrap), `RESERVA_POR_AUTORIZACAO` (approved requisition reservation), `SAIDA_POR_ATENDIMENTO` (delivered fulfillment), and `LIBERACAO_RESERVA_ATENDIMENTO` (authorized qty not delivered in partial fulfillment).
+- Currently implemented movement types: `SALDO_INICIAL`, `RESERVA_POR_AUTORIZACAO`, `SAIDA_POR_ATENDIMENTO`, and `LIBERACAO_RESERVA_ATENDIMENTO`.
 - Stock writes use `transaction.atomic()` + `select_for_update()` for row locking. Always lock inside transaction; never pass unlocked row to service outside tx context.
 - Keep `EstoqueMaterial.saldo_fisico`, `saldo_reservado`, `saldo_disponivel` consistent and prevent race conditions.
 - Reservation rejects `quantidade <= 0`, revalidates available balance inside locked stock service.
@@ -28,23 +36,23 @@ Stock invariants:
 - Partial fulfillment release rejects `quantidade <= 0`, revalidates reserved balance, preserves `saldo_fisico`, prevents `saldo_fisico < saldo_reservado_posterior`.
 - Stock service shortcuts receiving locked `EstoqueMaterial` via `estoque_travado` must run inside `transaction.atomic()` block only.
 
-**Acoplamento: Port/Adapter pattern (ADR 0002)**
+Port/Adapter pattern (ADR 0002):
 - `requisitions` defines `StockPort` (Protocol) in `apps/requisitions/ports.py`; `stock` implements `StockAdapter` in `apps/stock/adapters.py`.
 - Three coarse-grained port methods: `aplicar_reservas_autorizacao`, `liberar_reservas_cancelamento`, `aplicar_saidas_e_liberacoes_retirada`.
-- No domain objects (`EstoqueMaterial`, movement types) leak from stock to requisitions via port.
-- Side effects removed from `TRANSICOES_REQUISICAO` table; stock calls now explicit in service functions after `_apply_requisicao_transition`.
-- Dependency direction: requisitions → port/interface ← stock implements. No circular import, no bidirectional coupling.
+- No domain objects leak from stock to requisitions via port.
+- Side effects removed from transition table; stock calls stay explicit in services after transition application.
+- Dependency direction: requisitions -> port/interface <- stock implements.
 
-**Requisitions module structure (recent refactoring)**
+Requisitions module structure:
 - `domain/state_machine.py`: declarative state machine with transition table and single applier function.
 - `queries.py`: query helpers (load, lock, validate before mutation).
 - `sequences.py`: sequence generators for public numbers, IDs.
 - `idempotency.py`: payload idempotency pattern with cached result.
-- `services.py`: now focused on business orchestration; domain rules remain here, infrastructure extraction complete.
+- `services.py`: focused business orchestration.
 - `policies.py`: centralized contextual authorization checks.
 
 Dependency direction:
-`apps/core/` is technical infrastructure only and must not depend on domain apps. Domain app dependencies should remain explicit and acyclic as apps are introduced by the backlog. Notifications and other side effects must be reached by post-commit events instead of direct domain coupling.
+`apps/core/` is technical infrastructure only and must not depend on domain apps. Domain app dependencies should remain explicit and acyclic. Notifications and other side effects must be reached by post-commit events instead of direct domain coupling.
 
 Materials/SCPI invariants:
 - `GrupoMaterial` and `SubgrupoMaterial` are structural catalogs backed by SCPI data, not freeform WMS-maintained master data.
@@ -52,8 +60,7 @@ Materials/SCPI invariants:
 - Manual operational mutation of SCPI-official fields such as group/subgroup codes and names should not be exposed through normal admin add/change/delete surfaces.
 - Material search/list selection for requisition flows must return only active materials and include current `saldo_disponivel`.
 - The SCPI import pipeline is parser/normalizer first, service orchestration second, persistence third; do not collapse critical normalization into ad hoc command logic.
-- SCPI CSV parsing must tolerate UTF-8 BOM, semicolon-separated input, logical records with multiline continuation, and quantity normalization such as decimal comma.
-- SCPI import persistence is all-or-nothing: parsing, material creation, stock creation, and initial-balance movement registration must commit atomically.
+- SCPI import persistence is all-or-nothing.
 - Imported material names should be normalized to a single line / single-space representation before persistence.
 
 Development environment rule: local DB and app migrations are ephemeral during this early phase. Do not commit generated app migrations. For schema/model changes, rebuild local migrations and validate against a clean local database. Generated migrations are temporary materialization artifacts, not normal deliverables.
