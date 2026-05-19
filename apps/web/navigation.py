@@ -32,6 +32,17 @@ def build_navigation_for_user(user):
 
     _chefia_items = [
         {
+            "label": "Solicitações",
+            "items": [
+                {
+                    "label": "Minhas solicitações",
+                    "url": reverse("web:requisitions_mine"),
+                    "icon": "clipboard-list",
+                    "key": "requisitions_mine",
+                },
+            ],
+        },
+        {
             "label": "Autorizações",
             "items": [
                 {
