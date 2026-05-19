@@ -1,0 +1,28 @@
+{# _material_results.html — HTMX material search dropdown results
+   Context: materiais (list[Material]), item_idx (int), q (str)
+   Injected into #mat-results-{item_idx}. Each button dispatches Alpine material-selected event. #}
+{% if materiais %}
+<ul role="listbox" aria-label="Materiais encontrados" class="py-1 max-h-56 overflow-y-auto">
+  {% for mat in materiais %}
+  <li role="option">
+    <button type="button"
+            class="w-full text-left px-3 py-2 text-sm transition-colors duration-100"
+            style="color: var(--color-text-primary);"
+            @mouseover="$el.style.backgroundColor = 'var(--color-surface-muted)'"
+            @mouseleave="$el.style.backgroundColor = ''"
+            @click="$dispatch('material-selected', {idx: {{ item_idx }}, id: {{ mat.pk }}, nome: '{{ mat.nome|escapejs }}'})">
+      <span class="font-medium">{{ mat.nome }}</span>
+      {% if mat.subgrupo %}
+      <span class="block text-xs mt-0.5" style="color: var(--color-text-muted);">
+        {{ mat.subgrupo.grupo.nome }} / {{ mat.subgrupo.nome }}
+      </span>
+      {% endif %}
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+{% elif q and q|length >= 3 %}
+<p class="px-3 py-2 text-sm" style="color: var(--color-text-muted);">
+  Nenhum material disponível para "{{ q }}".
+</p>
+{% endif %}

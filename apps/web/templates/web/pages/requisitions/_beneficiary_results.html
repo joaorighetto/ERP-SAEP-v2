@@ -1,0 +1,28 @@
+{# _beneficiary_results.html — HTMX beneficiary search dropdown results
+   Context: beneficiarios (list[User]), q (str)
+   Injected into #beneficiary-results. Each button dispatches Alpine beneficiary-selected event. #}
+{% if beneficiarios %}
+<ul role="listbox" aria-label="Beneficiários encontrados" class="py-1 max-h-56 overflow-y-auto">
+  {% for user in beneficiarios %}
+  <li role="option">
+    <button type="button"
+            class="w-full text-left px-3 py-2 text-sm transition-colors duration-100"
+            style="color: var(--color-text-primary);"
+            @mouseover="$el.style.backgroundColor = 'var(--color-surface-muted)'"
+            @mouseleave="$el.style.backgroundColor = ''"
+            @click="$dispatch('beneficiary-selected', {id: {{ user.pk }}, nome: '{{ user.nome_completo|escapejs }}'})">
+      <span class="font-medium">{{ user.nome_completo }}</span>
+      {% if user.setor %}
+      <span class="block text-xs mt-0.5" style="color: var(--color-text-muted);">
+        {{ user.setor.nome }}
+      </span>
+      {% endif %}
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+{% elif q and q|length >= 3 %}
+<p class="px-3 py-2 text-sm" style="color: var(--color-text-muted);">
+  Nenhum beneficiário encontrado para "{{ q }}".
+</p>
+{% endif %}

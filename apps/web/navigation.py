@@ -16,7 +16,7 @@ def build_navigation_for_user(user):
             "items": [
                 {
                     "label": "Nova solicitação",
-                    "url": reverse("web:home"),
+                    "url": reverse("web:requisition_create"),
                     "icon": "plus-circle",
                     "key": "requisition_create",
                 },
@@ -34,6 +34,12 @@ def build_navigation_for_user(user):
         {
             "label": "Solicitações",
             "items": [
+                {
+                    "label": "Nova solicitação",
+                    "url": reverse("web:requisition_create"),
+                    "icon": "plus-circle",
+                    "key": "requisition_create",
+                },
                 {
                     "label": "Minhas solicitações",
                     "url": reverse("web:requisitions_mine"),
@@ -65,6 +71,12 @@ def build_navigation_for_user(user):
         {
             "label": "Solicitações",
             "items": [
+                {
+                    "label": "Nova solicitação",
+                    "url": reverse("web:requisition_create"),
+                    "icon": "plus-circle",
+                    "key": "requisition_create",
+                },
                 {
                     "label": "Minhas solicitações",
                     "url": reverse("web:requisitions_mine"),

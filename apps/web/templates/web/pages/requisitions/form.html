@@ -1,0 +1,17 @@
+{% extends "web/layouts/app_shell.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block main %}
+<div class="max-w-4xl mx-auto" data-testid="requisition-form-page">
+
+  <header class="mb-6">
+    <h1 class="text-xl font-semibold" style="color: var(--color-text-primary);">
+      {{ page_title }}
+    </h1>
+  </header>
+
+  {% include "web/pages/requisitions/_form_body.html" %}
+
+</div>
+{% endblock %}

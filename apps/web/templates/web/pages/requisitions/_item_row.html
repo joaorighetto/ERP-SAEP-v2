@@ -1,0 +1,130 @@
+{# _item_row.html — single formset row
+   Context: form (ItemRequisicaoForm with prefix form-{idx}), idx, new_total, material_nomes
+   Rendered inline in _form_body.html and returned by requisition_item_add_view (HTMX).
+   OOB: updates id_form-TOTAL_FORMS when returned by add view. #}
+{% if new_total %}
+<input id="id_form-TOTAL_FORMS"
+       name="form-TOTAL_FORMS"
+       type="hidden"
+       value="{{ new_total }}"
+       hx-swap-oob="true">
+{% endif %}
+
+<div
+  x-data="{
+    materialId: {{ form.initial.material_id|default:0 }},
+    materialNome: '{{ form.initial.material_nome|default:''|escapejs }}',
+    deleted: false,
+    searchOpen: false,
+  }"
+  @material-selected="
+    if ($event.detail.idx == {{ idx }}) {
+      materialId = $event.detail.id;
+      materialNome = $event.detail.nome;
+      searchOpen = false;
+      $refs.matInput.value = $event.detail.nome;
+    }
+  "
+  x-show="!deleted"
+  class="p-3 rounded-lg sm:grid sm:grid-cols-[1fr_8rem_1fr_2.5rem] sm:gap-3 sm:items-start space-y-2 sm:space-y-0"
+  style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);"
+  data-testid="item-row">
+
+  {# Hidden: material_id, DELETE #}
+  <input type="hidden"
+         name="{{ form.material_id.html_name }}"
+         :value="materialId"
+         data-testid="material-id-input-{{ idx }}">
+  <input type="hidden"
+         name="{{ form.prefix }}-DELETE"
+         :value="deleted ? 'on' : ''">
+
+  {# Material search — col 1 #}
+  <div class="relative">
+    <label class="sm:sr-only form-label text-xs" for="mat-search-{{ idx }}">
+      Material
+      <span aria-hidden="true" style="color: var(--color-danger);">*</span>
+    </label>
+    <input id="mat-search-{{ idx }}"
+           type="text"
+           x-ref="matInput"
+           :value="materialNome"
+           placeholder="Buscar material…"
+           class="form-input text-sm {% if form.material_id.errors %}border-[var(--color-danger)]{% endif %}"
+           autocomplete="off"
+           hx-get="{% url 'web:material_search' %}?idx={{ idx }}"
+           hx-vals='js:{"q": document.getElementById("mat-search-{{ idx }}").value}'
+           hx-target="#mat-results-{{ idx }}"
+           hx-swap="innerHTML"
+           hx-trigger="input changed delay:300ms"
+           @focus="searchOpen = true"
+           {% if form.material_id.errors %}aria-invalid="true" aria-describedby="mat-error-{{ idx }}"{% endif %}
+           data-testid="mat-search-{{ idx }}">
+
+    <div id="mat-results-{{ idx }}"
+         x-show="searchOpen"
+         @click.outside="searchOpen = false"
+         class="absolute z-20 w-full mt-1 rounded-lg overflow-hidden shadow-lg"
+         style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);">
+    </div>
+
+    {% if form.material_id.errors %}
+    <p id="mat-error-{{ idx }}" class="mt-1 text-xs font-medium" style="color: var(--color-danger);" role="alert" aria-invalid="true" aria-describedby="mat-error-{{ idx }}">
+      {{ form.material_id.errors.0 }}
+    </p>
+    {% endif %}
+  </div>
+
+  {# Quantidade — col 2 #}
+  <div>
+    <label class="sm:sr-only form-label text-xs" for="{{ form.quantidade_solicitada.id_for_label }}">
+      Quantidade
+      <span aria-hidden="true" style="color: var(--color-danger);">*</span>
+    </label>
+    <input type="number"
+           id="{{ form.quantidade_solicitada.id_for_label }}"
+           name="{{ form.quantidade_solicitada.html_name }}"
+           value="{{ form.quantidade_solicitada.value|default:'' }}"
+           class="form-input text-sm"
+           step="0.001"
+           min="0.001"
+           placeholder="0"
+           autocomplete="off"
+           {% if form.quantidade_solicitada.errors %}aria-invalid="true" aria-describedby="qty-error-{{ idx }}"{% endif %}
+           data-testid="qty-input-{{ idx }}">
+    {% if form.quantidade_solicitada.errors %}
+    <p id="qty-error-{{ idx }}" class="mt-1 text-xs font-medium" style="color: var(--color-danger);" role="alert">
+      {{ form.quantidade_solicitada.errors.0 }}
+    </p>
+    {% endif %}
+  </div>
+
+  {# Observação — col 3 #}
+  <div>
+    <label class="sm:sr-only form-label text-xs" for="{{ form.observacao.id_for_label }}">
+      Observação
+    </label>
+    <input type="text"
+           id="{{ form.observacao.id_for_label }}"
+           name="{{ form.observacao.html_name }}"
+           value="{{ form.observacao.value|default:'' }}"
+           class="form-input text-sm"
+           placeholder="Opcional"
+           maxlength="500"
+           data-testid="obs-input-{{ idx }}">
+  </div>
+
+  {# Remove button — col 4 #}
+  <div class="flex items-center justify-end sm:justify-center sm:pt-0 pt-1">
+    <button type="button"
+            class="btn btn-ghost btn-sm p-2"
+            @click="deleted = true"
+            :aria-label="'Remover item ' + ({{ idx }} + 1)"
+            data-testid="remove-item-{{ idx }}">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color: var(--color-danger);">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+    </button>
+  </div>
+
+</div>
