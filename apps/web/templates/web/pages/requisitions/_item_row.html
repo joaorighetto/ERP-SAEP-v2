@@ -16,18 +16,28 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
   x-data="{
     materialId: {{ form.initial.material_id|default:0 }},
     materialNome: '{{ form.initial.material_nome|default:''|escapejs }}',
+    saldoDisponivel: 0,
+    unidadeMedida: '',
+    qtdSolicitada: {{ form.quantidade_solicitada.value|default:0 }},
     deleted: false,
     searchOpen: false,
+    get qtdExcedeSaldo() {
+      return this.saldoDisponivel > 0 && this.materialId
+        && this.qtdSolicitada > this.saldoDisponivel;
+    }
   }"
   @material-selected="
     if ($event.detail.idx == {{ idx }}) {
       materialId = $event.detail.id;
       materialNome = $event.detail.nome;
+      saldoDisponivel = $event.detail.saldo ?? 0;
+      unidadeMedida = $event.detail.unidade ?? '';
       searchOpen = false;
       $refs.matInput.value = $event.detail.nome;
     }
   "
   x-show="!deleted"
+  :data-saldo="saldoDisponivel"
   class="p-3 rounded-lg sm:grid sm:grid-cols-[1fr_8rem_1fr_2.5rem] sm:gap-3 sm:items-start space-y-2 sm:space-y-0"
   style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);"
   data-testid="item-row">
@@ -61,6 +71,7 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
            hx-trigger="input changed delay:200ms"
            hx-sync="this:replace"
            @focus="searchOpen = true"
+           @input="if (!$el.value.trim()) { materialId = 0; materialNome = ''; saldoDisponivel = 0; unidadeMedida = ''; }"
            {% if form.material_id.errors %}aria-invalid="true" aria-describedby="mat-error-{{ idx }}"{% endif %}
            data-testid="mat-search-{{ idx }}">
 
@@ -89,11 +100,24 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
            value="{{ form.quantidade_solicitada.value|default:'' }}"
            class="form-input text-sm"
            step="1"
-           min="1"
+           min="0"
            placeholder="0"
            autocomplete="off"
+           @input="qtdSolicitada = Number($event.target.value)"
            {% if form.quantidade_solicitada.errors %}aria-invalid="true" aria-describedby="qty-error-{{ idx }}"{% endif %}
            data-testid="qty-input-{{ idx }}">
+    <p x-show="qtdExcedeSaldo"
+       x-transition:enter="transition ease-out duration-150"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-100"
+       x-transition:leave-end="opacity-0"
+       class="mt-1 text-xs font-medium"
+       style="color: var(--color-warning, #d97706);"
+       role="alert"
+       aria-live="polite">
+      Estoque: <span x-text="saldoDisponivel"></span> <span x-text="unidadeMedida"></span>
+    </p>
     {% if form.quantidade_solicitada.errors %}
     <p id="qty-error-{{ idx }}" class="mt-1 text-xs font-medium" style="color: var(--color-danger);" role="alert">
       {{ form.quantidade_solicitada.errors.0 }}

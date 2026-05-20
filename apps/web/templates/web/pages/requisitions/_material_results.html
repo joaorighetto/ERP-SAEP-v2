@@ -3,6 +3,7 @@ _material_results.html — HTMX material search dropdown results
 Context: materiais (list[Material]), item_idx (int), q (str)
 Injected into #mat-results-{item_idx}. Each button dispatches Alpine material-selected event.
 {% endcomment %}
+{% load l10n %}
 {% if materiais %}
 <ul aria-label="Materiais encontrados" class="py-1 max-h-56 overflow-y-auto">
   {% for mat in materiais %}
@@ -12,8 +13,15 @@ Injected into #mat-results-{item_idx}. Each button dispatches Alpine material-se
             style="color: var(--color-text-primary);"
             @mouseover="$el.style.backgroundColor = 'var(--color-surface-muted)'"
             @mouseleave="$el.style.backgroundColor = ''"
-            @click="$dispatch('material-selected', {idx: {{ item_idx }}, id: {{ mat.pk }}, nome: '{{ mat.nome|escapejs }}'})">
-      <span class="font-medium">{{ mat.nome }}</span>
+            @click="$dispatch('material-selected', {idx: {{ item_idx }}, id: {{ mat.pk }}, nome: '{{ mat.nome|escapejs }}', saldo: {{ mat.estoque.saldo_disponivel|default:0|unlocalize }}, unidade: '{{ mat.unidade_medida|escapejs }}'})">
+      <div class="flex items-baseline justify-between gap-2">
+        <span class="font-medium">{{ mat.nome }}</span>
+        {% if mat.estoque %}
+        <span class="text-xs shrink-0" style="color: var(--color-text-muted);">
+          {{ mat.estoque.saldo_disponivel|floatformat:"-3" }} {{ mat.unidade_medida }}
+        </span>
+        {% endif %}
+      </div>
       {% if mat.subgrupo %}
       <span class="block text-xs mt-0.5" style="color: var(--color-text-muted);">
         {{ mat.subgrupo.grupo.nome }} / {{ mat.subgrupo.nome }}

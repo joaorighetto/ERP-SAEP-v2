@@ -18,6 +18,32 @@
         hx-target="#form-body"
         hx-swap="outerHTML"
         novalidate
+        data-pending-action=""
+        hx-on:htmx:before-request="
+          const acao = event.currentTarget.dataset.pendingAction;
+          event.currentTarget.dataset.pendingAction = '';
+          if (acao !== 'enviar') return;
+          const rows = [...document.querySelectorAll('[data-testid=\'item-row\']')]
+            .filter(r => r.offsetParent !== null);
+          const activeRows = rows.filter(r => {
+            const mat = r.querySelector('[data-testid^=\'material-id-input-\']');
+            return mat && mat.value && mat.value !== '0';
+          });
+          if (activeRows.length === 0) {
+            event.preventDefault();
+            window.dispatchEvent(new CustomEvent('show-enviar-error', { detail: 'sem-itens' }));
+            return;
+          }
+          const hasExcess = activeRows.some(r => {
+            const saldo = parseFloat(r.dataset.saldo || '0');
+            const qty = parseFloat(r.querySelector('[data-testid^=\'qty-input-\']')?.value || '0');
+            return saldo > 0 && qty > saldo;
+          });
+          if (hasExcess) {
+            event.preventDefault();
+            window.dispatchEvent(new CustomEvent('show-enviar-error', { detail: 'com-excesso' }));
+          }
+        "
         {% if header_form.errors or item_formset.non_form_errors %}aria-invalid="true"{% endif %}
         data-testid="requisition-form">
 
@@ -163,7 +189,26 @@
     {# ------------------------------------------------------------------ #}
     {# Itens                                                               #}
     {# ------------------------------------------------------------------ #}
-    <section class="mb-6" data-testid="items-section">
+    <section class="mb-6"
+             x-data="{
+               itemsIncompletos: false,
+               checkItems() {
+                 if (!this.itemsIncompletos) return;
+                 const rows = [...this.$el.querySelectorAll('[data-testid=\'item-row\']')]
+                   .filter(r => r.offsetParent !== null);
+                 const ok = rows.every(r => {
+                   const mat = r.querySelector('[data-testid^=\'material-id-input-\']');
+                   const qty = r.querySelector('[data-testid^=\'qty-input-\']');
+                   return mat && mat.value && mat.value !== '0'
+                     && qty && parseFloat(qty.value || '0') > 0;
+                 });
+                 if (ok) this.itemsIncompletos = false;
+               }
+             }"
+             @show-items-error="itemsIncompletos = true"
+             @input="checkItems()"
+             @material-selected="checkItems()"
+             data-testid="items-section">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-sm font-semibold uppercase tracking-wide" style="color: var(--color-text-muted);">
           Itens
@@ -183,7 +228,10 @@
                     return mat && mat.value && mat.value !== '0'
                       && qty && parseFloat(qty.value || '0') > 0;
                   });
-                  if (!ok) event.preventDefault();
+                  if (!ok) {
+                    event.preventDefault();
+                    event.target.dispatchEvent(new CustomEvent('show-items-error', { bubbles: true }));
+                  }
                 "
                 data-testid="add-item-btn">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -192,6 +240,20 @@
           Adicionar item
         </button>
       </div>
+
+      <p x-show="itemsIncompletos"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 -translate-y-1"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="mb-2 text-xs font-medium"
+         style="color: var(--color-danger);"
+         role="alert"
+         aria-live="polite">
+        Preencha o material e a quantidade dos itens existentes antes de adicionar um novo.
+      </p>
 
       {# Management form (required by Django formset) #}
       {{ item_formset.management_form }}
@@ -229,7 +291,51 @@
         Cancelar
       </a>
 
-      <div class="flex flex-wrap gap-3">
+      <div class="flex flex-wrap gap-3"
+           x-data="{
+             enviarSemItens: false,
+             enviarComExcesso: false,
+             checkActiveRows() {
+               if (!this.enviarSemItens) return;
+               const hasActive = [...document.querySelectorAll('[data-testid=&quot;item-row&quot;]')]
+                 .filter(r => r.offsetParent !== null)
+                 .some(r => {
+                   const mat = r.querySelector('[data-testid^=&quot;material-id-input-&quot;]');
+                   return mat && mat.value && mat.value !== '0';
+                 });
+               if (hasActive) this.enviarSemItens = false;
+             }
+           }"
+           @show-enviar-error.window="
+             enviarSemItens = ($event.detail === 'sem-itens');
+             enviarComExcesso = ($event.detail === 'com-excesso');
+           "
+           @material-selected.window="$nextTick(() => checkActiveRows())"
+           @input.window="$nextTick(() => checkActiveRows())">
+        <p x-show="enviarSemItens"
+           x-transition:enter="transition ease-out duration-150"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-100"
+           x-transition:leave="transition ease-in duration-100"
+           x-transition:leave-end="opacity-0"
+           class="w-full text-xs font-medium"
+           style="color: var(--color-danger);"
+           role="alert"
+           aria-live="assertive">
+          Adicione ao menos um item antes de enviar.
+        </p>
+        <p x-show="enviarComExcesso"
+           x-transition:enter="transition ease-out duration-150"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-100"
+           x-transition:leave="transition ease-in duration-100"
+           x-transition:leave-end="opacity-0"
+           class="w-full text-xs font-medium"
+           style="color: var(--color-danger);"
+           role="alert"
+           aria-live="assertive">
+          Um ou mais itens excedem o estoque disponível. Corrija as quantidades antes de enviar.
+        </p>
         <button type="submit"
                 name="acao"
                 value="salvar"
@@ -241,6 +347,7 @@
                 name="acao"
                 value="enviar"
                 class="btn btn-primary"
+                @mousedown="$el.closest('form').dataset.pendingAction = 'enviar'"
                 data-testid="send-btn">
           {{ acao_enviar_label }}
         </button>
