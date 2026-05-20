@@ -280,7 +280,7 @@ class RequisicaoEditView(LoginRequiredMixin, View):
             }
         )
 
-        itens_list = list(req.itens.all())
+        itens_list = list(req.itens.select_related("material", "material__estoque").all())
         material_nomes = _material_nomes_para_itens(itens_list)
 
         item_initial = [
@@ -289,6 +289,10 @@ class RequisicaoEditView(LoginRequiredMixin, View):
                 "quantidade_solicitada": item.quantidade_solicitada,
                 "observacao": item.observacao,
                 "material_nome": item.material.nome,
+                "material_saldo": getattr(item.material, "estoque", None)
+                and item.material.estoque.saldo_disponivel
+                or 0,
+                "material_unidade": item.material.unidade_medida,
             }
             for item in itens_list
         ]

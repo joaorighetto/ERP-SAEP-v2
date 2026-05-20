@@ -27,7 +27,9 @@
             .filter(r => r.offsetParent !== null);
           const activeRows = rows.filter(r => {
             const mat = r.querySelector('[data-testid^=\'material-id-input-\']');
-            return mat && mat.value && mat.value !== '0';
+            const qty = r.querySelector('[data-testid^=\'qty-input-\']');
+            return mat && mat.value && mat.value !== '0'
+              && qty && parseFloat(qty.value || '0') > 0;
           });
           if (activeRows.length === 0) {
             event.preventDefault();
@@ -296,14 +298,25 @@
              enviarSemItens: false,
              enviarComExcesso: false,
              checkActiveRows() {
-               if (!this.enviarSemItens) return;
-               const hasActive = [...document.querySelectorAll('[data-testid=&quot;item-row&quot;]')]
-                 .filter(r => r.offsetParent !== null)
-                 .some(r => {
+               const rows = [...document.querySelectorAll('[data-testid=&quot;item-row&quot;]')]
+                 .filter(r => r.offsetParent !== null);
+               if (this.enviarSemItens) {
+                 const hasActive = rows.some(r => {
                    const mat = r.querySelector('[data-testid^=&quot;material-id-input-&quot;]');
-                   return mat && mat.value && mat.value !== '0';
+                   const qty = r.querySelector('[data-testid^=&quot;qty-input-&quot;]');
+                   return mat && mat.value && mat.value !== '0'
+                     && qty && parseFloat(qty.value || '0') > 0;
                  });
-               if (hasActive) this.enviarSemItens = false;
+                 if (hasActive) this.enviarSemItens = false;
+               }
+               if (this.enviarComExcesso) {
+                 const stillExcess = rows.some(r => {
+                   const saldo = parseFloat(r.dataset.saldo || '0');
+                   const qty = parseFloat(r.querySelector('[data-testid^=&quot;qty-input-&quot;]')?.value || '0');
+                   return saldo > 0 && qty > saldo;
+                 });
+                 if (!stillExcess) this.enviarComExcesso = false;
+               }
              }
            }"
            @show-enviar-error.window="

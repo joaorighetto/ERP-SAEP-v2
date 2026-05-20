@@ -4,6 +4,7 @@ Context: form (ItemRequisicaoForm with prefix form-{idx}), idx, new_total, mater
 Rendered inline in _form_body.html and returned by requisition_item_add_view (HTMX).
 OOB: updates id_form-TOTAL_FORMS when returned by add view.
 {% endcomment %}
+{% load l10n %}
 {% if new_total %}
 <input id="id_form-TOTAL_FORMS"
        name="form-TOTAL_FORMS"
@@ -16,8 +17,8 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
   x-data="{
     materialId: {{ form.initial.material_id|default:0 }},
     materialNome: '{{ form.initial.material_nome|default:''|escapejs }}',
-    saldoDisponivel: 0,
-    unidadeMedida: '',
+    saldoDisponivel: {{ form.initial.material_saldo|default:0|unlocalize }},
+    unidadeMedida: '{{ form.initial.material_unidade|default:''|escapejs }}',
     qtdSolicitada: {{ form.quantidade_solicitada.value|default:0 }},
     deleted: false,
     searchOpen: false,
