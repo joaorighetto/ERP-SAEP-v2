@@ -45,9 +45,10 @@
         </p>
 
       {% else %}
-        {# CHEFIA / ALMOXARIFADO: search field #}
+        {# Papéis com acesso a terceiros: toggle opt-in (default = self) #}
         <div x-data="{
-          beneficiarioId: {{ header_form.initial.beneficiario_id|default:0 }},
+          paraOutro: {{ beneficiario_e_terceiro|yesno:'true,false' }},
+          beneficiarioId: {{ header_form.initial.beneficiario_id|default:request.user.pk }},
           beneficiarioNome: '{{ beneficiario_display|escapejs }}',
           searchOpen: false,
         }"
@@ -55,48 +56,80 @@
             beneficiarioId = $event.detail.id;
             beneficiarioNome = $event.detail.nome;
             searchOpen = false;
-            $refs.benefSearch.value = $event.detail.nome;
-          "
-          class="relative"
-          @click.outside="searchOpen = false">
+            if ($refs.benefSearch) $refs.benefSearch.value = $event.detail.nome;
+          ">
 
           <input type="hidden"
                  name="{{ header_form.beneficiario_id.html_name }}"
-                 :value="beneficiarioId"
+                 :value="paraOutro ? String(beneficiarioId) : '{{ request.user.pk }}'"
                  data-testid="beneficiario-id-input"
                  {% if header_form.beneficiario_id.errors %}aria-invalid="true" aria-describedby="beneficiario-id-error"{% endif %}>
 
-          <label for="beneficio-search-input" class="form-label">
-            Beneficiário
-            <span aria-hidden="true" style="color: var(--color-danger);">*</span>
-          </label>
-          <input id="beneficio-search-input"
-                 type="text"
-                 x-ref="benefSearch"
-                 :value="beneficiarioNome"
-                 placeholder="Buscar pelo nome do beneficiário…"
-                 class="form-input"
-                 autocomplete="off"
-                 hx-get="{% url 'web:beneficiary_search' %}"
-                 hx-vals='js:{"q": document.getElementById("beneficio-search-input").value}'
-                 hx-target="#beneficiary-results"
-                 hx-swap="innerHTML"
-                 hx-trigger="input changed delay:200ms"
-                 hx-sync="this:replace"
-                 @focus="searchOpen = true"
-                 data-testid="beneficio-search-input">
-
-          <div id="beneficiary-results"
-               x-show="searchOpen"
-               class="absolute z-20 w-full mt-1 rounded-lg overflow-hidden shadow-lg"
-               style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);">
+          {# Self display — shown when toggle off #}
+          <div x-show="!paraOutro">
+            <p class="text-sm font-medium" style="color: var(--color-text-primary);" data-testid="beneficiario-display">
+              {{ request.user.nome_completo }}
+            </p>
           </div>
 
-          {% if header_form.beneficiario_id.errors %}
-          <p id="beneficiario-id-error" class="mt-1 text-xs font-medium" style="color: var(--color-danger);" role="alert">
-            {{ header_form.beneficiario_id.errors.0 }}
-          </p>
-          {% endif %}
+          {# Search field — shown when toggle on #}
+          <div x-show="paraOutro"
+               class="relative"
+               @click.outside="searchOpen = false">
+            <label for="beneficio-search-input" class="form-label">
+              Beneficiário
+              <span aria-hidden="true" style="color: var(--color-danger);">*</span>
+            </label>
+            <input id="beneficio-search-input"
+                   type="text"
+                   x-ref="benefSearch"
+                   :value="beneficiarioNome"
+                   placeholder="Buscar pelo nome do beneficiário…"
+                   class="form-input"
+                   autocomplete="off"
+                   hx-get="{% url 'web:beneficiary_search' %}"
+                   hx-vals='js:{"q": document.getElementById("beneficio-search-input").value}'
+                   hx-target="#beneficiary-results"
+                   hx-swap="innerHTML"
+                   hx-trigger="input changed delay:200ms"
+                   hx-sync="this:replace"
+                   @focus="searchOpen = true"
+                   {% if header_form.beneficiario_id.errors %}aria-invalid="true" aria-describedby="beneficiario-id-error"{% endif %}
+                   data-testid="beneficio-search-input">
+
+            <div id="beneficiary-results"
+                 x-show="searchOpen"
+                 class="absolute z-20 w-full mt-1 rounded-lg overflow-hidden shadow-lg"
+                 style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);">
+            </div>
+
+            {% if header_form.beneficiario_id.errors %}
+            <p id="beneficiario-id-error" class="mt-1 text-xs font-medium" style="color: var(--color-danger);" role="alert">
+              {{ header_form.beneficiario_id.errors.0 }}
+            </p>
+            {% endif %}
+          </div>
+
+          {# Toggle checkbox #}
+          <label class="flex items-center gap-2 mt-2 cursor-pointer select-none text-sm"
+                 style="color: var(--color-text-muted);">
+            <input type="checkbox"
+                   :checked="paraOutro"
+                   @change="
+                     paraOutro = $event.target.checked;
+                     if (!paraOutro) {
+                       beneficiarioId = {{ request.user.pk }};
+                       beneficiarioNome = '';
+                       searchOpen = false;
+                       if ($refs.benefSearch) $refs.benefSearch.value = '';
+                     } else {
+                       beneficiarioId = 0;
+                       beneficiarioNome = '';
+                       if ($refs.benefSearch) $refs.benefSearch.value = '';
+                     }
+                   ">
+            Solicitar para outra pessoa
+          </label>
         </div>
       {% endif %}
     </section>

@@ -88,8 +88,8 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
            name="{{ form.quantidade_solicitada.html_name }}"
            value="{{ form.quantidade_solicitada.value|default:'' }}"
            class="form-input text-sm"
-           step="0.001"
-           min="0.001"
+           step="1"
+           min="1"
            placeholder="0"
            autocomplete="off"
            {% if form.quantidade_solicitada.errors %}aria-invalid="true" aria-describedby="qty-error-{{ idx }}"{% endif %}

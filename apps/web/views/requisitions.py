@@ -128,16 +128,16 @@ class RequisicaoCreateView(LoginRequiredMixin, View):
         from apps.requisitions.forms import ItemRequisicaoFormSet, RequisicaoRascunhoForm
 
         is_solicitante = _is_solicitante_simples(request.user)
-        initial_beneficiario = request.user.pk if is_solicitante else None
 
-        header_form = RequisicaoRascunhoForm(initial={"beneficiario_id": initial_beneficiario})
+        header_form = RequisicaoRascunhoForm(initial={"beneficiario_id": request.user.pk})
         item_formset = ItemRequisicaoFormSet(prefix="form", initial=[{}])
 
         ctx = {
             "header_form": header_form,
             "item_formset": item_formset,
             "is_solicitante": is_solicitante,
-            "beneficiario_display": request.user.nome_completo if is_solicitante else "",
+            "beneficiario_e_terceiro": False,
+            "beneficiario_display": "",
             "material_nomes": {},
             "page_title": "Nova solicitação",
             "form_action": reverse("web:requisition_create"),
@@ -206,11 +206,24 @@ class RequisicaoCreateView(LoginRequiredMixin, View):
         return redirect("web:requisitions_mine")
 
     def _render_422(self, request, header_form, item_formset, is_solicitante):
+        from apps.users.models import User
+
+        submitted_id = header_form.data.get("beneficiario_id", "")
+        beneficiario_e_terceiro = submitted_id not in ("", "0", str(request.user.pk))
+        beneficiario_display = ""
+        if beneficiario_e_terceiro:
+            try:
+                b = User.objects.get(pk=int(submitted_id))
+                beneficiario_display = b.nome_completo
+            except Exception:
+                pass
+
         ctx = {
             "header_form": header_form,
             "item_formset": item_formset,
             "is_solicitante": is_solicitante,
-            "beneficiario_display": request.user.nome_completo if is_solicitante else "",
+            "beneficiario_e_terceiro": beneficiario_e_terceiro,
+            "beneficiario_display": beneficiario_display,
             "material_nomes": {},
             "page_title": "Nova solicitação",
             "form_action": reverse("web:requisition_create"),
@@ -281,11 +294,15 @@ class RequisicaoEditView(LoginRequiredMixin, View):
         ]
         item_formset = ItemRequisicaoFormSet(prefix="form", initial=item_initial)
 
+        beneficiario_e_terceiro = req.beneficiario_id != request.user.pk
         ctx = {
             "header_form": header_form,
             "item_formset": item_formset,
             "is_solicitante": is_solicitante,
-            "beneficiario_display": req.beneficiario.nome_completo,
+            "beneficiario_e_terceiro": beneficiario_e_terceiro,
+            "beneficiario_display": req.beneficiario.nome_completo
+            if beneficiario_e_terceiro
+            else "",
             "material_nomes": material_nomes,
             "page_title": "Editar rascunho",
             "form_action": reverse("web:requisition_edit", args=[pk]),
@@ -353,11 +370,24 @@ class RequisicaoEditView(LoginRequiredMixin, View):
         return redirect("web:requisitions_mine")
 
     def _render_422(self, request, pk, req, header_form, item_formset, is_solicitante):
+        from apps.users.models import User
+
+        submitted_id = header_form.data.get("beneficiario_id", "")
+        beneficiario_e_terceiro = submitted_id not in ("", "0", str(request.user.pk))
+        beneficiario_display = ""
+        if beneficiario_e_terceiro:
+            try:
+                b = User.objects.get(pk=int(submitted_id))
+                beneficiario_display = b.nome_completo
+            except Exception:
+                pass
+
         ctx = {
             "header_form": header_form,
             "item_formset": item_formset,
             "is_solicitante": is_solicitante,
-            "beneficiario_display": req.beneficiario.nome_completo if req else "",
+            "beneficiario_e_terceiro": beneficiario_e_terceiro,
+            "beneficiario_display": beneficiario_display,
             "material_nomes": {},
             "page_title": "Editar rascunho",
             "form_action": reverse("web:requisition_edit", args=[pk]),
