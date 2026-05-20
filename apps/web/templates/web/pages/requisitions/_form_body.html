@@ -57,7 +57,8 @@
             searchOpen = false;
             $refs.benefSearch.value = $event.detail.nome;
           "
-          class="relative">
+          class="relative"
+          @click.outside="searchOpen = false">
 
           <input type="hidden"
                  name="{{ header_form.beneficiario_id.html_name }}"
@@ -88,8 +89,7 @@
           <div id="beneficiary-results"
                x-show="searchOpen"
                class="absolute z-20 w-full mt-1 rounded-lg overflow-hidden shadow-lg"
-               style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);"
-               @click.outside="searchOpen = false">
+               style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);">
           </div>
 
           {% if header_form.beneficiario_id.errors %}

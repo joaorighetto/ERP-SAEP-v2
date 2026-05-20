@@ -42,7 +42,7 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
          :value="deleted ? 'on' : ''">
 
   {# Material search — col 1 #}
-  <div class="relative">
+  <div class="relative" @click.outside="searchOpen = false">
     <label class="sm:sr-only form-label text-xs" for="mat-search-{{ idx }}">
       Material
       <span aria-hidden="true" style="color: var(--color-danger);">*</span>
@@ -66,7 +66,6 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
 
     <div id="mat-results-{{ idx }}"
          x-show="searchOpen"
-         @click.outside="searchOpen = false"
          class="absolute z-20 w-full mt-1 rounded-lg overflow-hidden shadow-lg"
          style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);">
     </div>
