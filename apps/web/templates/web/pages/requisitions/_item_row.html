@@ -71,7 +71,7 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
            hx-trigger="input changed delay:200ms"
            hx-sync="this:replace"
            @focus="searchOpen = true"
-           @input="if (!$el.value.trim()) { materialId = 0; materialNome = ''; saldoDisponivel = 0; unidadeMedida = ''; }"
+           @input="materialId = 0; materialNome = ''; saldoDisponivel = 0; unidadeMedida = '';"
            {% if form.material_id.errors %}aria-invalid="true" aria-describedby="mat-error-{{ idx }}"{% endif %}
            data-testid="mat-search-{{ idx }}">
 
@@ -82,7 +82,7 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
     </div>
 
     {% if form.material_id.errors %}
-    <p id="mat-error-{{ idx }}" class="mt-1 text-xs font-medium" style="color: var(--color-danger);" role="alert" aria-invalid="true" aria-describedby="mat-error-{{ idx }}">
+    <p id="mat-error-{{ idx }}" class="mt-1 text-xs font-medium" style="color: var(--color-danger);" role="alert">
       {{ form.material_id.errors.0 }}
     </p>
     {% endif %}
