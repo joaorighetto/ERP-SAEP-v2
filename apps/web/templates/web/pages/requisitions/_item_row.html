@@ -58,7 +58,8 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
            hx-vals='js:{"q": document.getElementById("mat-search-{{ idx }}").value}'
            hx-target="#mat-results-{{ idx }}"
            hx-swap="innerHTML"
-           hx-trigger="input changed delay:300ms"
+           hx-trigger="input changed delay:200ms"
+           hx-sync="this:replace"
            @focus="searchOpen = true"
            {% if form.material_id.errors %}aria-invalid="true" aria-describedby="mat-error-{{ idx }}"{% endif %}
            data-testid="mat-search-{{ idx }}">

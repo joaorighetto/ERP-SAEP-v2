@@ -80,7 +80,8 @@
                  hx-vals='js:{"q": document.getElementById("beneficio-search-input").value}'
                  hx-target="#beneficiary-results"
                  hx-swap="innerHTML"
-                 hx-trigger="input changed delay:300ms"
+                 hx-trigger="input changed delay:200ms"
+                 hx-sync="this:replace"
                  @focus="searchOpen = true"
                  data-testid="beneficio-search-input">
 
