@@ -63,7 +63,7 @@
         {# SOLICITANTE: auto-filled, read-only (PER-01) #}
         <input type="hidden"
                name="{{ header_form.beneficiario_id.html_name }}"
-               value="{{ request.user.pk }}"
+               value="{{ beneficiario_id_value }}"
                data-testid="beneficiario-id-input">
         <p class="text-sm font-medium" style="color: var(--color-text-primary);" data-testid="beneficiario-display">
           {{ beneficiario_display }}
@@ -89,7 +89,7 @@
 
           <input type="hidden"
                  name="{{ header_form.beneficiario_id.html_name }}"
-                 :value="paraOutro ? String(beneficiarioId) : '{{ request.user.pk }}'"
+                 :value="paraOutro ? String(beneficiarioId) : '{{ beneficiario_id_value }}'"
                  data-testid="beneficiario-id-input"
                  >
 
@@ -146,7 +146,7 @@
                    @change="
                      paraOutro = $event.target.checked;
                      if (!paraOutro) {
-                       beneficiarioId = {{ request.user.pk }};
+                       beneficiarioId = {{ beneficiario_id_value }};
                        beneficiarioNome = '';
                        searchOpen = false;
                        if ($refs.benefSearch) $refs.benefSearch.value = '';

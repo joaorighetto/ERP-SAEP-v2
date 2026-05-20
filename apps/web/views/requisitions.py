@@ -142,6 +142,7 @@ class RequisicaoCreateView(LoginRequiredMixin, View):
             "page_title": "Nova solicitação",
             "form_action": reverse("web:requisition_create"),
             "acao_enviar_label": "Enviar para autorização",
+            "beneficiario_id_value": request.user.pk,
         }
         ctx.update(_nav_context(request))
         return render(request, _FORM_FULL_TEMPLATE, ctx)
@@ -228,6 +229,7 @@ class RequisicaoCreateView(LoginRequiredMixin, View):
             "page_title": "Nova solicitação",
             "form_action": reverse("web:requisition_create"),
             "acao_enviar_label": "Enviar para autorização",
+            "beneficiario_id_value": request.user.pk,
         }
         ctx.update(_nav_context(request))
         if getattr(request, "htmx", False):

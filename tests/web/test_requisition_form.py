@@ -168,9 +168,9 @@ class TestAcesso:
 
     def test_material_search_nao_autenticado(self):
         resp = Client().get(_material_search_url(), {"q": "tubo"})
-        # HTMX session expired helper returns 200 with HX-Redirect
-        # non-HTMX would redirect normally
-        assert resp.status_code in (200, 302)
+        # material_search_view always delegates to htmx_session_expired → 200 + HX-Redirect
+        assert resp.status_code == 200
+        assert "HX-Redirect" in resp
 
 
 # ---------------------------------------------------------------------------
