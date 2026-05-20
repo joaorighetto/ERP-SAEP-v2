@@ -24,8 +24,12 @@ class RequisicaoMaterialOutputSerializer(serializers.Serializer):
 
 
 class RequisicaoItemCreateInputSerializer(serializers.Serializer):
-    material_id = serializers.IntegerField()
-    quantidade_solicitada = serializers.DecimalField(max_digits=12, decimal_places=3)
+    material_id = serializers.IntegerField(min_value=1)
+    quantidade_solicitada = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        min_value=Decimal("0.001"),
+    )
     observacao = serializers.CharField(required=False, allow_blank=True, default="")
 
 

@@ -4,7 +4,7 @@
   {% if header_form.non_field_errors %}
   <div class="mb-4" role="alert" aria-live="assertive" aria-atomic="true">
     {% for error in header_form.non_field_errors %}
-    <div id="form-error-{{ forloop.counter }}" role="alert" aria-live="assertive">
+    <div id="form-error-{{ forloop.counter }}" role="alert">
       {% include "web/components/alert.html" with variant="danger" message=error testid="form-error" %}
     </div>
     {% endfor %}
@@ -89,7 +89,7 @@
                  name="{{ header_form.beneficiario_id.html_name }}"
                  :value="paraOutro ? String(beneficiarioId) : '{{ request.user.pk }}'"
                  data-testid="beneficiario-id-input"
-                 {% if header_form.beneficiario_id.errors %}aria-invalid="true" aria-describedby="beneficiario-id-error"{% endif %}>
+                 >
 
           {# Self display — shown when toggle off #}
           <div x-show="!paraOutro">
@@ -274,7 +274,7 @@
 
       {% if item_formset.non_form_errors %}
       <div class="mt-2" role="alert">
-        <p class="text-xs font-medium" style="color: var(--color-danger);" aria-invalid="true" aria-describedby="formset-error">
+        <p class="text-xs font-medium" style="color: var(--color-danger);" role="alert">
           {{ item_formset.non_form_errors.0 }}
         </p>
       </div>

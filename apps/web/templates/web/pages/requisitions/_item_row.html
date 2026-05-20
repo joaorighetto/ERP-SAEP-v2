@@ -77,6 +77,8 @@ OOB: updates id_form-TOTAL_FORMS when returned by add view.
 
     <div id="mat-results-{{ idx }}"
          x-show="searchOpen"
+         aria-live="polite"
+         aria-atomic="false"
          class="absolute z-20 w-full mt-1 rounded-lg overflow-hidden shadow-lg"
          style="background-color: var(--color-surface-raised); border: 1px solid var(--color-border);">
     </div>

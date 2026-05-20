@@ -267,6 +267,37 @@ class TestRequisicaoAPI:
         assert response.status_code == 404
         assert response.data["error"]["code"] == "not_found"
 
+    def test_criacao_rejeita_material_id_zero(self):
+        setor = self._criar_setor("Cadastro", "900091")
+        usuario = self._criar_usuario("100091", "Solicitante Zero Mat", setor=setor)
+
+        client = APIClient()
+        client.force_authenticate(user=usuario)
+        payload = {
+            "beneficiario_id": usuario.pk,
+            "itens": [{"material_id": 0, "quantidade_solicitada": "1.000"}],
+        }
+        response = client.post(reverse("requisicao-list"), payload, format="json")
+
+        assert response.status_code == 400
+        assert response.data["error"]["code"] == "validation_error"
+
+    def test_criacao_rejeita_quantidade_zero(self):
+        setor = self._criar_setor("Cadastro", "900092")
+        usuario = self._criar_usuario("100092", "Solicitante Zero Qty", setor=setor)
+        material = self._criar_material_com_estoque("001.001.092")
+
+        client = APIClient()
+        client.force_authenticate(user=usuario)
+        payload = {
+            "beneficiario_id": usuario.pk,
+            "itens": [{"material_id": material.pk, "quantidade_solicitada": "0.000"}],
+        }
+        response = client.post(reverse("requisicao-list"), payload, format="json")
+
+        assert response.status_code == 400
+        assert response.data["error"]["code"] == "validation_error"
+
     def test_lista_requisicoes_visiveis_paginada_e_leve(self):
         setor = self._criar_setor("Operacoes", "900072")
         outro_setor = self._criar_setor("Financeiro", "900073")
