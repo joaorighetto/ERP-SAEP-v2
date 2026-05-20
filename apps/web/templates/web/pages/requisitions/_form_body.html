@@ -141,6 +141,17 @@
                 hx-target="#item-rows-container"
                 hx-swap="beforeend"
                 hx-vals='js:{"total": document.getElementById("id_form-TOTAL_FORMS").value}'
+                hx-on:htmx:before-request="
+                  const rows = [...document.querySelectorAll('[data-testid=\'item-row\']')]
+                    .filter(r => r.offsetParent !== null);
+                  const ok = rows.every(r => {
+                    const mat = r.querySelector('[data-testid^=\'material-id-input-\']');
+                    const qty = r.querySelector('[data-testid^=\'qty-input-\']');
+                    return mat && mat.value && mat.value !== '0'
+                      && qty && parseFloat(qty.value || '0') > 0;
+                  });
+                  if (!ok) event.preventDefault();
+                "
                 data-testid="add-item-btn">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
